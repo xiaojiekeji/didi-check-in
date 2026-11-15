@@ -102,4 +102,35 @@
         <item>跳过</item>
         <item>取消</item>
     </string-array>
+    <!--
+        系统「应用启动」确认弹窗（国产 ROM 从别的 App 跳转滴滴时会弹）：
+        「始终打开 / 仅打开一次」必须点，绝对不能点「取消」——点取消就等于本轮放弃跳转。
+    -->
+    <string-array name="kw_launch_always">
+        <item>始终打开</item>
+        <item>总是允许</item>
+        <item>始终允许</item>
+    </string-array>
+
+    <string-array name="kw_launch_once">
+        <item>仅打开一次</item>
+        <item>仅此一次</item>
+        <item>只打开一次</item>
+    </string-array>
+
+    <!-- 出现这些词，说明当前是「应用启动」确认弹窗 -->
+    <string-array name="kw_launch_popup">
+        <item>想要打开</item>
+        <item>应用启动</item>
+        <item>打开应用</item>
+    </string-array>
+
+    <!-- 自己 App 界面的特征词：只要认到这些，就说明还没切到滴滴，一律不许点 -->
+    <string-array name="kw_self_page">
+        <item>全部在本机运行</item>
+        <item>每日自动签到</item>
+        <item>去开启无障碍服务</item>
+        <item>加入电池优化白名单</item>
+        <item>今日打卡</item>
+    </string-array>
 </resources>

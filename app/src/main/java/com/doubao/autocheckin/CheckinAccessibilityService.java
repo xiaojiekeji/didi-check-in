@@ -117,6 +117,10 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private String[] kwClose;
     private String[] kwConfirm;
     private String[] kwPopup;
+    private String[] kwLaunchAlways;
+    private String[] kwLaunchOnce;
+    private String[] kwLaunchPopup;
+    private String[] kwSelfPage;
 
     private PowerManager.WakeLock wakeLock;
 
@@ -139,6 +143,10 @@ public class CheckinAccessibilityService extends AccessibilityService {
         kwClose = getResources().getStringArray(R.array.kw_close);
         kwConfirm = getResources().getStringArray(R.array.kw_confirm);
         kwPopup = getResources().getStringArray(R.array.kw_popup);
+        kwLaunchAlways = getResources().getStringArray(R.array.kw_launch_always);
+        kwLaunchOnce = getResources().getStringArray(R.array.kw_launch_once);
+        kwLaunchPopup = getResources().getStringArray(R.array.kw_launch_popup);
+        kwSelfPage = getResources().getStringArray(R.array.kw_self_page);
         Notifier.init(this);
         Logger.log(this, "无障碍服务已连接（识别方式："
                 + (Build.VERSION.SDK_INT >= 30 ? "截图 + OCR 文字识别（极速版）" : "控件文字（Android 11 以下无截图）")
@@ -359,7 +367,19 @@ public class CheckinAccessibilityService extends AccessibilityService {
         long now = System.currentTimeMillis();
         nextDelay = RETRY_MS;
 
-        // 弹窗优先：只有看起来真是弹窗才点关闭，正常页面绝不乱点
+        // 0) 屏幕上还是我自己的界面（标题「滴滴充电自动签到」/设置项）→ 一个都别点，等滴滴起来
+        if (anyOf(words, kwSelfPage) || isOwnAppForeground()) {
+            Logger.log(this, "仍是我方界面，等待滴滴切到前台…");
+            nextDelay = 700L;
+            return;
+        }
+
+        // 1) 系统「应用启动」确认框：点「始终打开」，绝不允许点「取消」
+        if (tryLaunchDialog(words)) {
+            return;
+        }
+
+        // 2) 弹窗优先：只有看起来真是弹窗才点关闭，正常页面绝不乱点
         if (stage != ST_VERIFY && closeCount < MAX_CLOSE && tryClosePopup(words)) {
             return;
         }
@@ -561,6 +581,44 @@ public class CheckinAccessibilityService extends AccessibilityService {
                     return true;
                 }
             }
+        }
+        return false;
+    }
+
+    /**
+     * 系统「应用启动」弹窗：`"滴滴充电自动签到" 想要打开 "滴滴"` + 仅打开一次 / 始终打开 / 取消。
+     * 必须点「始终打开」（之后系统不再问），点了取消这轮就白跑。
+     */
+    private boolean tryLaunchDialog(List<ScreenOcr.Word> words) {
+        boolean isLaunchDialog = false;
+        for (ScreenOcr.Word w : words) {
+            if (w == null || w.text.isEmpty()) {
+                continue;
+            }
+            for (String k : kwLaunchPopup) {
+                if (k != null && !k.isEmpty() && w.text.contains(k)) {
+                    isLaunchDialog = true;
+                    break;
+                }
+            }
+            if (isLaunchDialog) {
+                break;
+            }
+        }
+        if (!isLaunchDialog) {
+            return false;
+        }
+        ScreenOcr.Word always = findBest(words, kwLaunchAlways, 0.40f, 0.98f);
+        if (always != null) {
+            tapWord(always, "系统弹窗「始终打开」");
+            enter(ST_OWNER, System.currentTimeMillis());
+            return true;
+        }
+        ScreenOcr.Word once = findBest(words, kwLaunchOnce, 0.40f, 0.98f);
+        if (once != null) {
+            tapWord(once, "系统弹窗「仅打开一次」");
+            enter(ST_OWNER, System.currentTimeMillis());
+            return true;
         }
         return false;
     }
