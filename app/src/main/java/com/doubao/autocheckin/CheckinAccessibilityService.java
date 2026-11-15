@@ -310,16 +310,50 @@ public class CheckinAccessibilityService extends AccessibilityService {
     }
 
     private boolean isOwnAppForeground() {
+        return getPackageName().equals(foregroundPkg());
+    }
+
+    /** 当前前台 App 的包名；取不到返回空串。 */
+    private String foregroundPkg() {
         try {
             AccessibilityNodeInfo root = getRootInActiveWindow();
             if (root == null) {
-                return false;
+                return "";
             }
             CharSequence p = root.getPackageName();
-            return p != null && getPackageName().equals(p.toString());
+            return p == null ? "" : p.toString();
         } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /**
+     * 前台不是滴滴、也不在我自己的界面上——那就是别的 App（桌面/微信/豆包…），绝对不能点。
+     * 系统弹窗（权限框、「应用启动」确认框）不算外来 App，要允许处理。
+     */
+    private boolean isForeignForeground(String fg) {
+        if (fg == null || fg.isEmpty()) {
+            return false;   // 取不到就当没拦，避免完全跑不动
+        }
+        if (fg.equals(pkg) || fg.equals(getPackageName())) {
             return false;
         }
+        if (fg.startsWith("android") || fg.contains("systemui") || fg.contains("permissioncontroller")
+                || fg.contains("packageinstaller") || fg.contains("settings")) {
+            return false;   // 系统界面，交给「应用启动」弹窗逻辑处理
+        }
+        return true;
+    }
+
+    private long lastRelaunchAt;
+
+    private void relaunchTargetIfStale() {
+        long now = System.currentTimeMillis();
+        if (now - lastRelaunchAt < 1800L) {
+            return;
+        }
+        lastRelaunchAt = now;
+        launchTarget();
     }
 
     /** 把每帧识别到的文字打进日志，方便真机上调关键词和坐标。 */
@@ -415,15 +449,17 @@ public class CheckinAccessibilityService extends AccessibilityService {
         long now = System.currentTimeMillis();
         nextDelay = RETRY_MS;
 
-        // 0) 屏幕上还是我自己的界面（标题「滴滴充电自动签到」/设置项）→ 一个都别点，等滴滴起来
-        if (anyOf(words, kwSelfPage) || isOwnAppForeground()) {
-            Logger.log(this, "仍是我方界面，等待滴滴切到前台…");
-            nextDelay = 700L;
+        // 0) 系统「应用启动」确认框最优先：这个框不处理，整轮就白跑（而且绝不能点到「取消」）
+        if (tryLaunchDialog(words)) {
             return;
         }
 
-        // 1) 系统「应用启动」确认框：点「始终打开」，绝不允许点「取消」
-        if (tryLaunchDialog(words)) {
+        // 0.5) 我自己的界面、或者别的 App（桌面/微信/豆包…）在前台 → 一律不许点，把滴滴拉到前台
+        String fg = foregroundPkg();
+        if (isOwnAppForeground() || isForeignForeground(fg) || (fg.isEmpty() && anyOf(words, kwSelfPage))) {
+            Logger.log(this, "前台是「" + (fg.isEmpty() ? "我方/未知" : fg) + "」，不是滴滴，重新拉起滴滴…");
+            relaunchTargetIfStale();
+            nextDelay = 800L;
             return;
         }
 
