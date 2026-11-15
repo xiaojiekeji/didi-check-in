@@ -61,17 +61,18 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private static final int R_SKIP = 2;
     private static final int R_FAIL = 3;
 
-    /** 点完等页面切过去的时间。 */
-    private static final long SETTLE_MS = 360L;
+    /** 点完等页面切过去的时间（随机 1~2 秒，避免机械节奏被风控）。 */
+    private static final long SETTLE_MIN_MS = 1000L;
+    private static final long SETTLE_MAX_MS = 2000L;
     /** 没找到目标时，隔多久再看一眼。
      *  注意：系统限制两次 takeScreenshot 间隔太短会直接失败（错误码 3），所以不能低于 480ms。 */
     private static final long RETRY_MS = 480L;
     /** 拉起 App 后第一帧的等待。 */
     private static final long LAUNCH_GAP_MS = 900L;
-    /** 整轮上限（正常路径 5~10 秒完事，这个只是保险）。 */
-    private static final long TASK_TIMEOUT_MS = 70_000L;
+    /** 整轮上限（加了 1~2 秒人工节奏后，正常 15~25 秒，这里留足保险）。 */
+    private static final long TASK_TIMEOUT_MS = 100_000L;
     /** 单个阶段找入口的上限。 */
-    private static final long STAGE_TIMEOUT_MS = 8_000L;
+    private static final long STAGE_TIMEOUT_MS = 12_000L;
     private static final int MAX_CLOSE = 3;
     private static final int MAX_SCROLL_CHARGE = 2;
     private static final int MAX_SCROLL_MEMBER = 2;
@@ -875,8 +876,15 @@ public class CheckinAccessibilityService extends AccessibilityService {
         lastTapAt = now;
         Logger.log(this, "点击" + what + "：\"" + word.text + "\" @" + x + "," + y);
         tap(x, y);
-        nextDelay = SETTLE_MS;
-        settleUntil = now + SETTLE_MS;
+        long gap = humanDelay();
+        nextDelay = gap;
+        settleUntil = now + gap;
+        Logger.log(this, "等页面切换 " + gap + "ms");
+    }
+
+    /** 每次动作后的停顿：1~2 秒随机，别让节奏像脚本。 */
+    private long humanDelay() {
+        return SETTLE_MIN_MS + (long) (Math.random() * (SETTLE_MAX_MS - SETTLE_MIN_MS + 1));
     }
 
     /**
@@ -907,8 +915,9 @@ public class CheckinAccessibilityService extends AccessibilityService {
         lastTapX = x;
         lastTapY = y;
         lastTapAt = now;
-        nextDelay = SETTLE_MS;
-        settleUntil = now + SETTLE_MS;
+        long gap = humanDelay();
+        nextDelay = gap;
+        settleUntil = now + gap;
         return true;
     }
 
@@ -936,9 +945,10 @@ public class CheckinAccessibilityService extends AccessibilityService {
             GestureDescription.StrokeDescription stroke =
                     new GestureDescription.StrokeDescription(p, 0, 360);
             dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
-            Logger.log(this, what);
-            settleUntil = System.currentTimeMillis() + 380L;
-            nextDelay = 380L;
+            long gap = humanDelay();
+            Logger.log(this, what + "，等 " + gap + "ms");
+            settleUntil = System.currentTimeMillis() + gap;
+            nextDelay = gap;
         } catch (Throwable t) {
             Logger.log(this, "滑动失败：" + t);
         }
