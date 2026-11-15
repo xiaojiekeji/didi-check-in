@@ -47,13 +47,13 @@
         <item>已领取</item>
     </string-array>
 
-    <!-- 签到成功的判定文案 -->
+    <!-- 签到成功的判定文案（只认明确的成功字样，避免被首页广告的「恭喜/获得」误判） -->
     <string-array name="kw_success">
         <item>签到成功</item>
         <item>领取成功</item>
-        <item>恭喜</item>
-        <item>获得</item>
+        <item>签到完成</item>
         <item>已签到</item>
+        <item>明天再来</item>
     </string-array>
 
     <!-- 弹窗上「一律点关闭」的按钮文案 -->
@@ -78,5 +78,28 @@
         <item>同意并继续</item>
         <item>同意</item>
         <item>我已知晓</item>
+    </string-array>
+
+    <!--
+        弹窗特征文案：只有屏幕上出现以下任意一个词，才认为当前有弹窗、才会去找关闭按钮。
+        正常页面（首页/充电页/我的页）不会有这些词，因此不会出现「见 × 就点」的乱跳。
+    -->
+    <string-array name="kw_popup">
+        <item>同意</item>
+        <item>允许</item>
+        <item>我知道了</item>
+        <item>知道了</item>
+        <item>温馨提示</item>
+        <item>隐私政策</item>
+        <item>用户协议</item>
+        <item>授权</item>
+        <item>开启通知</item>
+        <item>定位权限</item>
+        <item>立即更新</item>
+        <item>版本更新</item>
+        <item>以后再说</item>
+        <item>暂不</item>
+        <item>跳过</item>
+        <item>取消</item>
     </string-array>
 </resources>

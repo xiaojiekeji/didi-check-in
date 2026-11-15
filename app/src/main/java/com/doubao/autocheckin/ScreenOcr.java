@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 屏幕文字识别：把截图交给 ML Kit 离线中文模型，返回带坐标的文字块。
+ * 屏幕文字识别：把截图交给 ML Kit 离线中文模型，返回带坐标的文字行。
  * 坐标就是屏幕像素坐标，可以直接拿来 dispatchGesture 点击。
+ *
+ * 速度要点：支持只识别屏幕的某一块区域（ROI），区域越小越快。
  */
 public final class ScreenOcr {
 
@@ -59,26 +61,59 @@ public final class ScreenOcr {
         return recognizer;
     }
 
+    /** 预热模型：服务连上就先加载，避免第一次识别多等 1 秒左右。 */
+    public static void warmup() {
+        try {
+            recognizer();
+        } catch (Throwable ignored) {
+        }
+    }
+
     public interface Callback {
         void onDone(List<Word> words, String error);
     }
 
     public static void recognize(Bitmap bitmap, final Callback cb) {
+        recognize(bitmap, null, cb);
+    }
+
+    /**
+     * 识别指定区域（roi 为 null 时识别整张图）。返回的坐标已换算回整屏坐标。
+     */
+    public static void recognize(Bitmap bitmap, Rect roi, final Callback cb) {
         if (bitmap == null) {
             cb.onDone(new ArrayList<Word>(), "截图为空");
             return;
         }
+        Bitmap cropped = null;
+        int ox = 0;
+        int oy = 0;
         try {
-            InputImage image = InputImage.fromBitmap(bitmap, 0);
+            int imgW = bitmap.getWidth();
+            int imgH = bitmap.getHeight();
+            if (roi != null) {
+                int left = Math.max(0, Math.min(roi.left, imgW - 1));
+                int top = Math.max(0, Math.min(roi.top, imgH - 1));
+                int right = Math.min(imgW, Math.max(roi.right, left + 1));
+                int bottom = Math.min(imgH, Math.max(roi.bottom, top + 1));
+                if (right - left > 8 && bottom - top > 8) {
+                    cropped = Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top);
+                    ox = left;
+                    oy = top;
+                }
+            }
+            InputImage image = InputImage.fromBitmap(cropped != null ? cropped : bitmap, 0);
+            final int fx = ox;
+            final int fy = oy;
             recognizer().process(image)
-                    .addOnSuccessListener(result -> cb.onDone(flatten(result), null))
+                    .addOnSuccessListener(result -> cb.onDone(flatten(result, fx, fy), null))
                     .addOnFailureListener(e -> cb.onDone(new ArrayList<Word>(), String.valueOf(e)));
         } catch (Throwable t) {
             cb.onDone(new ArrayList<Word>(), String.valueOf(t));
         }
     }
 
-    private static List<Word> flatten(Text result) {
+    private static List<Word> flatten(Text result, int ox, int oy) {
         List<Word> out = new ArrayList<>();
         if (result == null) {
             return out;
@@ -96,9 +131,12 @@ public final class ScreenOcr {
                     continue;
                 }
                 String t = line.getText();
-                if (t != null && !t.trim().isEmpty() && line.getBoundingBox() != null) {
-                    out.add(new Word(t, line.getBoundingBox()));
+                Rect b = line.getBoundingBox();
+                if (t == null || t.trim().isEmpty() || b == null) {
+                    continue;
                 }
+                Rect moved = new Rect(b.left + ox, b.top + oy, b.right + ox, b.bottom + oy);
+                out.add(new Word(t, moved));
             }
         }
         return out;

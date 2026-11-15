@@ -25,11 +25,21 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 核心执行器：截图 + OCR 文字识别 + 坐标点击。
+ * 核心执行器：截图 + OCR 文字识别 + 坐标点击（v1.3 极速版）。
  *
- * 流程（与滴滴当前页面一致）：
- * 打开 App → 关掉所有弹窗 → 点顶部「车主」→ 关弹窗 → 点「滴滴充电」→ 关弹窗
- * → 点右下角「我的」→ 点「会员中心」→ 页面下滑 → 找到「签到」并点击 → 校验成功并截图
+ * 最短路径：打开滴滴 → 进「滴滴充电」→ 底部「我的」→「会员中心」→ 下滑 → 点「签到」→ 校验并截图。
+ *
+ * 速度设计：
+ * 1) 每一步只识别需要的那一块屏幕（ROI），比整屏识别快 2~3 倍；
+ * 2) 点完只等 320ms 就复检，没找到目标 240ms 后再看一次，不再固定等 1.2 秒；
+ * 3) 无障碍控件文字几乎零耗时，和 OCR 结果合并后一起匹配，命中就点，减少反复识别；
+ * 4) OCR 回调统一回主线程再点，手势不会被排队拖慢。
+ *
+ * 防误点设计：
+ * 1) 只有屏幕上出现弹窗特征文案时才去找关闭按钮，正常页面绝不乱点「× / 关闭」；
+ * 2) 关闭按钮限制在屏幕中部区域，贴边的一律不点；
+ * 3) 兜底点击沿用底部标签行的真实 y 坐标，绝不点屏幕最底部（那里是系统导航栏，会误触返回/主页）；
+ * 4) 同一坐标 1.5 秒内不重复点，避免连点导致乱跳页面。
  *
  * Android 11 以下没有截图能力，自动降级为读取控件文字（无障碍节点）。
  */
@@ -39,30 +49,32 @@ public class CheckinAccessibilityService extends AccessibilityService {
     public static final String EXTRA_STATUS = "status";
     public static final String EXTRA_MSG = "msg";
 
-    private static final int ST_LAUNCH = 1;
-    private static final int ST_HOME_CLOSE = 2;
-    private static final int ST_TAP_OWNER = 3;
-    private static final int ST_OWNER_CLOSE = 4;
-    private static final int ST_TAP_CHARGE = 5;
-    private static final int ST_CHARGE_CLOSE = 6;
-    private static final int ST_TAP_MINE = 7;
-    private static final int ST_TAP_MEMBER = 8;
-    private static final int ST_SCROLL_SIGN = 9;
-    private static final int ST_TAP_SIGN = 10;
-    private static final int ST_VERIFY = 11;
+    private static final int ST_OPEN = 1;
+    private static final int ST_CHARGE = 2;
+    private static final int ST_MINE = 3;
+    private static final int ST_MEMBER = 4;
+    private static final int ST_SIGN = 5;
+    private static final int ST_VERIFY = 6;
 
     private static final int R_SUCCESS = 1;
     private static final int R_SKIP = 2;
     private static final int R_FAIL = 3;
 
-    private static final long TICK_MS = 1200L;
-    private static final long TASK_TIMEOUT_MS = 150_000L;
-    private static final long LAUNCH_WAIT_MS = 4_500L;
-    private static final long STAGE_TIMEOUT_MS = 22_000L;
-    private static final long CLOSE_PHASE_MS = 7_000L;
-    private static final int MAX_CLOSE = 6;
-    private static final int MAX_SCROLL = 10;
-    private static final int MAX_SIGN_TAP = 3;
+    /** 点完等页面切过去的时间。 */
+    private static final long SETTLE_MS = 320L;
+    /** 没找到目标时，隔多久再看一眼。 */
+    private static final long RETRY_MS = 240L;
+    /** 拉起 App 后第一帧的等待。 */
+    private static final long LAUNCH_GAP_MS = 900L;
+    /** 整轮上限（正常路径 5~10 秒完事，这个只是保险）。 */
+    private static final long TASK_TIMEOUT_MS = 70_000L;
+    /** 单个阶段找入口的上限。 */
+    private static final long STAGE_TIMEOUT_MS = 8_000L;
+    private static final int MAX_CLOSE = 3;
+    private static final int MAX_SCROLL_CHARGE = 2;
+    private static final int MAX_SCROLL_MEMBER = 2;
+    private static final int MAX_SCROLL_SIGN = 6;
+    private static final int MAX_SIGN_TAP = 2;
 
     private static CheckinAccessibilityService sInstance;
 
@@ -73,11 +85,20 @@ public class CheckinAccessibilityService extends AccessibilityService {
 
     private int stage;
     private long stageStart;
+    private long taskStart;
+    private long settleUntil;
+    private long nextDelay = RETRY_MS;
+
     private int closeCount;
-    private int scrollCount;
+    private int scrollChargeCount;
+    private int scrollMemberCount;
+    private int scrollSignCount;
     private int signTapCount;
-    private int memberScrollCount;
-    private boolean mineFallbackDone;
+    private boolean ownerTried;
+
+    private int lastTapX = -1;
+    private int lastTapY = -1;
+    private long lastTapAt;
 
     private String pkg;
     private String sourceLabel = "";
@@ -93,6 +114,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private String[] kwSuccess;
     private String[] kwClose;
     private String[] kwConfirm;
+    private String[] kwPopup;
 
     private PowerManager.WakeLock wakeLock;
 
@@ -114,9 +136,13 @@ public class CheckinAccessibilityService extends AccessibilityService {
         kwSuccess = getResources().getStringArray(R.array.kw_success);
         kwClose = getResources().getStringArray(R.array.kw_close);
         kwConfirm = getResources().getStringArray(R.array.kw_confirm);
+        kwPopup = getResources().getStringArray(R.array.kw_popup);
         Notifier.init(this);
         Logger.log(this, "无障碍服务已连接（识别方式："
-                + (Build.VERSION.SDK_INT >= 30 ? "截图 + OCR 文字识别" : "控件文字（Android 11 以下无截图）") + "）");
+                + (Build.VERSION.SDK_INT >= 30 ? "截图 + OCR 文字识别（极速版）" : "控件文字（Android 11 以下无截图）")
+                + "）");
+        // 后台预热 OCR 模型，第一次识别不再等模型加载
+        new Thread(() -> ScreenOcr.warmup(), "ocr-warmup").start();
         CheckinScheduler.scheduleDaily(this);
         CheckinScheduler.scheduleReminderDaily(this);
     }
@@ -159,20 +185,27 @@ public class CheckinAccessibilityService extends AccessibilityService {
         ocrBusy = false;
         finishedOnce = false;
         closeCount = 0;
-        scrollCount = 0;
-        memberScrollCount = 0;
+        scrollChargeCount = 0;
+        scrollMemberCount = 0;
+        scrollSignCount = 0;
         signTapCount = 0;
-        mineFallbackDone = false;
+        ownerTried = false;
+        lastTapX = -1;
+        lastTapY = -1;
+        lastTapAt = 0;
         lastShotPath = "";
         ocrError = "";
         sourceLabel = source == null ? "" : source;
         pkg = Config.targetPackage(this);
+        taskStart = System.currentTimeMillis();
+        stage = ST_OPEN;
+        stageStart = taskStart;
+        nextDelay = RETRY_MS;
         Logger.log(this, "==== 开始执行（" + source + "），目标包名 " + pkg + " ====");
         acquireWake();
         launchTarget();
-        stage = ST_LAUNCH;
-        stageStart = System.currentTimeMillis();
-        handler.postDelayed(tick, 1800);
+        settleUntil = System.currentTimeMillis() + LAUNCH_GAP_MS;
+        handler.postDelayed(tick, LAUNCH_GAP_MS);
         handler.postDelayed(timeoutTask, TASK_TIMEOUT_MS);
     }
 
@@ -180,7 +213,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
         @Override
         public void run() {
             if (busy) {
-                finish(R_FAIL, "整体执行超时（150 秒），请查看截图与日志");
+                finish(R_FAIL, "整体执行超时（70 秒），请查看截图与日志");
             }
         }
     };
@@ -191,220 +224,218 @@ public class CheckinAccessibilityService extends AccessibilityService {
             if (!busy) {
                 return;
             }
+            long now = System.currentTimeMillis();
+            if (now < settleUntil) {
+                handler.postDelayed(this, settleUntil - now);
+                return;
+            }
             if (ocrBusy) {
-                handler.postDelayed(this, 600);
+                handler.postDelayed(this, 100);
                 return;
             }
             ocrBusy = true;
-            captureScreen((bitmap, err) -> {
-                if (!busy) {
-                    ocrBusy = false;
-                    return;
-                }
-                List<ScreenOcr.Word> fallback = null;
-                if (bitmap == null) {
-                    ocrError = err;
-                    fallback = nodeWords();
-                }
-                if (fallback != null) {
-                    ocrBusy = false;
-                    afterWords(fallback);
-                    return;
-                }
-                ScreenOcr.recognize(bitmap, (words, error) -> {
-                    ocrBusy = false;
-                    if (!busy) {
-                        return;
-                    }
-                    List<ScreenOcr.Word> use = (words == null || words.isEmpty())
-                            ? nodeWords() : words;
-                    if (words == null || words.isEmpty()) {
-                        if (error != null) {
-                            ocrError = error;
-                        }
-                        Logger.log(CheckinAccessibilityService.this,
-                                "OCR 未取到文字，改用控件文字（" + ocrError + "）");
-                    }
-                    afterWords(use);
-                });
-            });
+            observe();
         }
     };
 
-    private void afterWords(List<ScreenOcr.Word> words) {
-        if (!busy) {
-            return;
-        }
-        try {
-            step(words);
-        } catch (Throwable t) {
-            Logger.log(this, "执行异常：" + t);
-            finish(R_FAIL, "执行异常：" + t.getClass().getSimpleName());
-            return;
-        }
-        if (busy) {
-            handler.postDelayed(tick, TICK_MS);
-        }
+    /** 截一帧，按当前阶段只识别需要的那块区域，再叠加控件文字一起交给状态机。 */
+    private void observe() {
+        final int stageSnap = stage;
+        captureScreen((bitmap, err) -> {
+            if (!busy) {
+                ocrBusy = false;
+                return;
+            }
+            if (bitmap == null) {
+                ocrError = err;
+                final List<ScreenOcr.Word> nodes = nodeWords();
+                ocrBusy = false;
+                onWords(nodes);
+                return;
+            }
+            ScreenOcr.recognize(bitmap, roiFor(stageSnap), (words, error) -> {
+                ocrBusy = false;
+                if (error != null) {
+                    ocrError = error;
+                }
+                List<ScreenOcr.Word> merged = new ArrayList<>();
+                if (words != null) {
+                    merged.addAll(words);
+                }
+                // 控件文字零成本，合并进来提高命中率
+                merged.addAll(nodeWords());
+                onWords(merged);
+            });
+        });
+    }
+
+    private void onWords(final List<ScreenOcr.Word> words) {
+        handler.post(() -> {
+            if (!busy) {
+                return;
+            }
+            try {
+                step(words);
+            } catch (Throwable t) {
+                Logger.log(this, "执行异常：" + t);
+                finish(R_FAIL, "执行异常：" + t.getClass().getSimpleName());
+                return;
+            }
+            if (!busy) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            long delay = now < settleUntil ? (settleUntil - now) : nextDelay;
+            handler.postDelayed(tick, delay);
+        });
     }
 
     // ---------------------------------------------------------------- 状态机
 
     private void step(List<ScreenOcr.Word> words) {
         long now = System.currentTimeMillis();
+        nextDelay = RETRY_MS;
+
+        // 弹窗优先：只有看起来真是弹窗才点关闭，正常页面绝不乱点
+        if (stage != ST_VERIFY && closeCount < MAX_CLOSE && tryClosePopup(words)) {
+            return;
+        }
+
         switch (stage) {
-            case ST_LAUNCH: {
-                if (now - stageStart < LAUNCH_WAIT_MS) {
+            case ST_OPEN:
+                if (now - taskStart < LAUNCH_GAP_MS) {
                     return;
                 }
-                Logger.log(this, "打开 App 完成，开始清理弹窗");
-                enter(ST_HOME_CLOSE, now);
+                stage = ST_CHARGE;
+                stageStart = now;
+                doCharge(words, now);
+                return;
+            case ST_CHARGE:
+                doCharge(words, now);
+                return;
+            case ST_MINE:
+                doMine(words, now);
+                return;
+            case ST_MEMBER:
+                doMember(words, now);
+                return;
+            case ST_SIGN:
+                doSign(words, now);
+                return;
+            case ST_VERIFY:
+                doVerify(words, now);
+                return;
+            default:
+                finish(R_FAIL, "未知阶段 " + stage);
+        }
+    }
+
+    /** 找「滴滴充电」入口：首页上直接点。 */
+    private void doCharge(List<ScreenOcr.Word> words, long now) {
+        ScreenOcr.Word w = findBest(words, kwCharge, 0.06f, 0.94f);
+        if (w != null) {
+            tapWord(w, "「滴滴充电」入口");
+            enter(ST_MINE, now);
+            return;
+        }
+        if (!ownerTried && now - stageStart > 1200) {
+            ScreenOcr.Word owner = findBest(words, kwOwner, 0.0f, 0.55f);
+            if (owner != null) {
+                ownerTried = true;
+                tapWord(owner, "顶部「车主」（首页没有充电入口时走备用路径）");
+                enter(ST_CHARGE, now);
                 return;
             }
-            case ST_HOME_CLOSE: {
-                if (closeOnePopup(words)) {
-                    return;
-                }
-                if (closeCount >= MAX_CLOSE || now - stageStart > CLOSE_PHASE_MS) {
-                    Logger.log(this, "首页弹窗清理完成，准备点「车主」（共关闭 " + closeCount + " 个）");
-                    enter(ST_TAP_OWNER, now);
-                }
+        }
+        if (ownerTried && now - stageStart > 2600) {
+            // 车主页里再找一次充电入口，找不到就滑一下
+            if (scrollChargeCount < MAX_SCROLL_CHARGE) {
+                scrollChargeCount++;
+                swipeUp("找充电入口，下滑（第 " + scrollChargeCount + " 次）");
                 return;
             }
-            case ST_TAP_OWNER: {
-                ScreenOcr.Word w = findAny(words, kwOwner);
-                if (w != null) {
-                    tapWord(w, "顶部「车主」");
-                    enter(ST_OWNER_CLOSE, now);
-                    return;
-                }
-                if (now - stageStart > STAGE_TIMEOUT_MS) {
-                    finish(R_FAIL, "首页找不到「车主」入口，可能页面结构有变化（可改 res/values/arrays.xml 的 kw_owner）");
-                }
+        }
+        if (now - stageStart > STAGE_TIMEOUT_MS) {
+            finish(R_FAIL, "没找到「滴滴充电」入口（首页文字已记到日志，可改 kw_charge）");
+        }
+    }
+
+    /** 底部导航「我的」：只在屏幕下半部分找。 */
+    private void doMine(List<ScreenOcr.Word> words, long now) {
+        ScreenOcr.Word w = findBest(words, kwMine, 0.55f, 1.0f);
+        if (w != null) {
+            tapWord(w, "底部「我的」");
+            enter(ST_MEMBER, now);
+            return;
+        }
+        if (now - stageStart > 2600) {
+            if (tapBottomTab(words, "兜底点底部「我的」（沿用底部标签行的 y）")) {
+                enter(ST_MEMBER, now);
                 return;
             }
-            case ST_OWNER_CLOSE: {
-                if (closeOnePopup(words)) {
-                    return;
-                }
-                if (closeCount >= MAX_CLOSE || now - stageStart > CLOSE_PHASE_MS) {
-                    Logger.log(this, "车主页弹窗清理完成");
-                    enter(ST_TAP_CHARGE, now);
-                }
-                return;
-            }
-            case ST_TAP_CHARGE: {
-                ScreenOcr.Word w = findAny(words, kwCharge);
-                if (w != null) {
-                    tapWord(w, "「滴滴充电」入口");
-                    enter(ST_CHARGE_CLOSE, now);
-                    return;
-                }
-                if (now - stageStart > STAGE_TIMEOUT_MS) {
-                    finish(R_FAIL, "车主页找不到「滴滴充电」入口（可改 kw_charge）");
-                }
-                return;
-            }
-            case ST_CHARGE_CLOSE: {
-                if (closeOnePopup(words)) {
-                    return;
-                }
-                if (closeCount >= MAX_CLOSE || now - stageStart > CLOSE_PHASE_MS) {
-                    Logger.log(this, "充电页弹窗清理完成");
-                    enter(ST_TAP_MINE, now);
-                }
-                return;
-            }
-            case ST_TAP_MINE: {
-                ScreenOcr.Word w = findAny(words, kwMine, 0.55f);
-                if (w == null) {
-                    w = findAny(words, kwMine);
-                }
-                if (w != null) {
-                    tapWord(w, "底部「我的」");
-                    enter(ST_TAP_MEMBER, now);
-                    return;
-                }
-                if (!mineFallbackDone && now - stageStart > 8_000L) {
-                    mineFallbackDone = true;
-                    tapBottomRight("兜底点击右下角「我的」");
-                    enter(ST_TAP_MEMBER, now);
-                    return;
-                }
-                if (now - stageStart > STAGE_TIMEOUT_MS) {
-                    finish(R_FAIL, "找不到「我的」入口（可改 kw_mine）");
-                }
-                return;
-            }
-            case ST_TAP_MEMBER: {
-                ScreenOcr.Word w = findAny(words, kwMember);
-                if (w != null) {
-                    tapWord(w, "「会员中心」");
-                    enter(ST_SCROLL_SIGN, now);
-                    return;
-                }
-                if (now - stageStart > 6_000L) {
-                    if (memberScrollCount >= 4) {
-                        finish(R_FAIL, "找不到「会员中心」（可改 kw_member）");
-                        return;
-                    }
-                    memberScrollCount++;
-                    swipeUp("没看到会员中心，先往下滑（第 " + memberScrollCount + " 次）");
-                    stageStart = now;
-                }
-                return;
-            }
-            case ST_SCROLL_SIGN: {
-                if (anyOf(words, kwSigned)) {
-                    Logger.log(this, "检测到今日已签到的文案");
-                    enter(ST_VERIFY, now);
-                    return;
-                }
-                ScreenOcr.Word w = findAny(words, kwCheckin);
-                if (w != null) {
-                    Logger.log(this, "找到签到按钮：" + w.text);
-                    enter(ST_TAP_SIGN, now);
-                    return;
-                }
-                if (scrollCount >= MAX_SCROLL) {
-                    finish(R_FAIL, "会员中心下滑 " + MAX_SCROLL + " 次仍未找到签到按钮（可改 kw_checkin）");
-                    return;
-                }
-                scrollCount++;
-                swipeUp("下滑找签到按钮（第 " + scrollCount + " 次）");
+            finish(R_FAIL, "找不到底部「我的」入口（可改 kw_mine）");
+        }
+    }
+
+    /** 「会员中心」入口。 */
+    private void doMember(List<ScreenOcr.Word> words, long now) {
+        ScreenOcr.Word w = findBest(words, kwMember, 0.03f, 0.90f);
+        if (w != null) {
+            tapWord(w, "「会员中心」");
+            enter(ST_SIGN, now);
+            return;
+        }
+        if (now - stageStart > 1600) {
+            if (scrollMemberCount < MAX_SCROLL_MEMBER) {
+                scrollMemberCount++;
+                swipeUp("我的页下滑找「会员中心」（第 " + scrollMemberCount + " 次）");
                 stageStart = now;
                 return;
             }
-            case ST_TAP_SIGN: {
-                ScreenOcr.Word w = findAny(words, kwCheckin);
-                if (w == null) {
-                    if (now - stageStart > 3_000L) {
-                        enter(ST_SCROLL_SIGN, now);
-                    }
-                    return;
-                }
-                tapWord(w, "签到按钮");
-                signTapCount++;
-                enter(ST_VERIFY, now);
+            finish(R_FAIL, "找不到「会员中心」（可改 kw_member）");
+        }
+    }
+
+    /** 下滑找「签到」按钮。 */
+    private void doSign(List<ScreenOcr.Word> words, long now) {
+        // 先找按钮：签到日历里历史日期也可能写着「已签到」，有按钮就一律以按钮为准
+        ScreenOcr.Word w = findCheckin(words);
+        if (w != null) {
+            tapWord(w, "签到按钮");
+            signTapCount++;
+            enter(ST_VERIFY, now);
+            return;
+        }
+        if (anyOf(words, kwSigned)) {
+            Logger.log(this, "没有签到按钮、页面显示已签到");
+            succeedAndShot(R_SKIP, "今天已经签过了");
+            return;
+        }
+        if (now - stageStart > 800) {
+            if (scrollSignCount < MAX_SCROLL_SIGN) {
+                scrollSignCount++;
+                swipeUp("下滑找签到按钮（第 " + scrollSignCount + " 次）");
+                stageStart = now;
                 return;
             }
-            case ST_VERIFY: {
-                if (anyOf(words, kwSuccess) || anyOf(words, kwSigned)) {
-                    Logger.log(this, "确认签到成功");
-                    succeedAndShot(R_SUCCESS, "签到成功");
-                    return;
-                }
-                if (now - stageStart > 6_000L) {
-                    if (signTapCount < MAX_SIGN_TAP) {
-                        Logger.log(this, "还没看到成功提示，重新找签到按钮再点一次");
-                        enter(ST_SCROLL_SIGN, now);
-                    } else {
-                        finish(R_FAIL, "点了 " + signTapCount + " 次签到，仍未检测到成功提示，请查看截图");
-                    }
-                }
-                return;
+            finish(R_FAIL, "下滑 " + scrollSignCount + " 次仍未找到签到按钮（可改 kw_checkin）");
+        }
+    }
+
+    /** 校验签到结果。 */
+    private void doVerify(List<ScreenOcr.Word> words, long now) {
+        if (anyOf(words, kwSuccess) || anyOf(words, kwSigned)) {
+            Logger.log(this, "确认签到成功");
+            succeedAndShot(R_SUCCESS, "签到成功");
+            return;
+        }
+        if (now - stageStart > 2200) {
+            if (signTapCount < MAX_SIGN_TAP) {
+                Logger.log(this, "还没看到成功提示，回去再点一次签到");
+                enter(ST_SIGN, now);
+            } else {
+                finish(R_FAIL, "点了 " + signTapCount + " 次签到仍未检测到成功提示，请查看截图");
             }
-            default:
-                finish(R_FAIL, "未知阶段 " + stage);
         }
     }
 
@@ -412,90 +443,194 @@ public class CheckinAccessibilityService extends AccessibilityService {
         stage = newStage;
         stageStart = now;
         closeCount = 0;
-        mineFallbackDone = false;
+        nextDelay = RETRY_MS;
     }
 
-    // ---------------------------------------------------------------- 弹窗
+    // ---------------------------------------------------------------- 区域与弹窗
 
-    private boolean closeOnePopup(List<ScreenOcr.Word> words) {
-        ScreenOcr.Word w = findCloseWord(words);
-        if (w != null) {
-            tapWord(w, "关闭弹窗");
+    /** 每个阶段只看需要的那块屏幕：越小识别越快，也越不容易误认别处文字。 */
+    private Rect roiFor(int s) {
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
+        switch (s) {
+            case ST_MINE:
+                return new Rect(0, (int) (h * 0.55f), w, h);
+            case ST_MEMBER:
+                return new Rect(0, (int) (h * 0.04f), w, (int) (h * 0.75f));
+            case ST_SIGN:
+                return new Rect(0, (int) (h * 0.10f), w, (int) (h * 0.90f));
+            case ST_VERIFY:
+                return new Rect(0, (int) (h * 0.12f), w, (int) (h * 0.82f));
+            default:
+                return new Rect(0, (int) (h * 0.06f), w, (int) (h * 0.94f));
+        }
+    }
+
+    /** 屏幕上出现这些字，才认为有弹窗需要处理。 */
+    private boolean looksLikePopup(List<ScreenOcr.Word> words) {
+        for (ScreenOcr.Word w : words) {
+            if (w == null || w.text.isEmpty()) {
+                continue;
+            }
+            for (String k : kwPopup) {
+                if (k != null && !k.isEmpty() && w.text.contains(k)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean tryClosePopup(List<ScreenOcr.Word> words) {
+        if (!looksLikePopup(words)) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        ScreenOcr.Word close = findCloseButton(words);
+        if (close != null) {
+            tapWord(close, "关闭弹窗");
             closeCount++;
-            stageStart = System.currentTimeMillis();
+            stageStart = now;
             return true;
         }
-        // 实在没有「关闭 / × / 知道了」这类文案，再看有没有必须同意的隐私弹窗
-        ScreenOcr.Word agree = findAny(words, kwConfirm);
-        if (agree != null && closeCount == 0) {
-            tapWord(agree, "隐私弹窗（同意后继续）");
+        ScreenOcr.Word agree = findBest(words, kwConfirm, 0.25f, 0.95f);
+        if (agree != null) {
+            tapWord(agree, "弹窗「同意」");
             closeCount++;
-            stageStart = System.currentTimeMillis();
+            stageStart = now;
             return true;
         }
         return false;
     }
 
-    private ScreenOcr.Word findCloseWord(List<ScreenOcr.Word> words) {
+    /**
+     * 找弹窗上的关闭按钮：只认屏幕中部、尺寸正常的文字，
+     * 贴边的「×」多半是页面装饰或广告角标，点了会跳走，所以直接排除。
+     */
+    private ScreenOcr.Word findCloseButton(List<ScreenOcr.Word> words) {
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
         ScreenOcr.Word best = null;
         int bestScore = -1;
-        for (ScreenOcr.Word w : words) {
-            String t = w.text;
-            if (t == null || t.isEmpty()) {
+        for (ScreenOcr.Word word : words) {
+            if (word == null || word.text.isEmpty()) {
                 continue;
             }
-            if (t.contains("签到") || t.contains("会员") || t.contains("车主")) {
+            String t = word.text;
+            if (t.contains("签到") || t.contains("会员") || t.contains("车主") || t.contains("充电")) {
                 continue;
             }
+            int cy = word.centerY();
+            int cx = word.centerX();
+            if (cy < h * 0.18f || cy > h * 0.86f) {
+                continue;
+            }
+            if (cx < w * 0.04f || cx > w * 0.96f) {
+                continue;
+            }
+            if (word.height() > h * 0.12f) {
+                continue;
+            }
+            int score = -1;
             for (String k : kwClose) {
                 if (k == null || k.isEmpty()) {
                     continue;
                 }
-                int s = -1;
                 if (k.length() == 1) {
                     if (t.equalsIgnoreCase(k)) {
-                        s = 3;
+                        score = Math.max(score, 3);
                     }
                 } else if (t.equals(k)) {
-                    s = 3;
-                } else if (t.contains(k)) {
-                    s = 2;
+                    // 只认完全相等：「取消」「关闭」这类短词必须整词命中，
+                    // 否则「取消订单」「关闭自动续费」会被当成弹窗关闭按钮点掉
+                    score = Math.max(score, 3);
+                } else if (k.length() >= 3 && t.startsWith(k)) {
+                    score = Math.max(score, 2);
                 }
-                if (s > bestScore) {
-                    bestScore = s;
-                    best = w;
-                }
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = word;
             }
         }
         return best;
     }
 
-    // ---------------------------------------------------------------- 判定
+    // ---------------------------------------------------------------- 匹配
 
     private boolean anyOf(List<ScreenOcr.Word> words, String[] kws) {
-        return findAny(words, kws) != null;
+        return findBest(words, kws, 0f, 1f) != null;
     }
 
-    private ScreenOcr.Word findAny(List<ScreenOcr.Word> words, String[] kws) {
-        return findAny(words, kws, 0f);
+    /** 找签到按钮，排除「签到规则 / 签到记录 / 签到日历」这类说明入口。 */
+    private ScreenOcr.Word findCheckin(List<ScreenOcr.Word> words) {
+        if (words == null || words.isEmpty()) {
+            return null;
+        }
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
+        ScreenOcr.Word best = null;
+        int bestScore = -1;
+        for (ScreenOcr.Word word : words) {
+            if (word == null || word.text.isEmpty()) {
+                continue;
+            }
+            String t = word.text;
+            if (t.contains("规则") || t.contains("记录") || t.contains("日历")
+                    || t.contains("说明") || t.contains("详情") || t.contains("查看") || t.contains("帮助")) {
+                continue;
+            }
+            int cy = word.centerY();
+            int cx = word.centerX();
+            if (h > 0 && (cy < h * 0.05f || cy > h * 0.95f)) {
+                continue;
+            }
+            if (w > 0 && (cx < w * 0.03f || cx > w * 0.97f)) {
+                continue;
+            }
+            int score = -1;
+            for (String k : kwCheckin) {
+                if (k == null || k.isEmpty()) {
+                    continue;
+                }
+                if (t.equals(k)) {
+                    score = Math.max(score, 3);
+                } else if (t.startsWith(k)) {
+                    score = Math.max(score, 2);
+                } else if (t.contains(k)) {
+                    score = Math.max(score, 1);
+                }
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = word;
+            }
+        }
+        return best;
     }
 
     /**
-     * 在识别结果里找关键词：完全相等 > 以关键词开头 > 包含；
-     * minYRatio > 0 时只考虑屏幕下半部分（用来定位「我的」这种底部导航）。
+     * 在识别结果里按「完全相等 > 以关键词开头 > 包含」打分，
+     * 并且排除贴边文字（贴边多半是状态栏、导航栏、广告角标）。
      */
-    private ScreenOcr.Word findAny(List<ScreenOcr.Word> words, String[] kws, float minYRatio) {
+    private ScreenOcr.Word findBest(List<ScreenOcr.Word> words, String[] kws, float minYRatio, float maxYRatio) {
         if (words == null || kws == null) {
             return null;
         }
-        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
         ScreenOcr.Word best = null;
         int bestScore = -1;
-        for (ScreenOcr.Word w : words) {
-            if (w == null || w.text == null || w.text.isEmpty()) {
+        for (ScreenOcr.Word word : words) {
+            if (word == null || word.text.isEmpty()) {
                 continue;
             }
-            if (minYRatio > 0 && screenH > 0 && w.centerY() < screenH * minYRatio) {
+            int cy = word.centerY();
+            int cx = word.centerX();
+            if (h > 0 && (cy < h * minYRatio || cy > h * maxYRatio)) {
+                continue;
+            }
+            if (w > 0 && (cx < w * 0.03f || cx > w * 0.97f)) {
                 continue;
             }
             for (String k : kws) {
@@ -504,19 +639,19 @@ public class CheckinAccessibilityService extends AccessibilityService {
                 }
                 int s = -1;
                 if (k.length() == 1) {
-                    if (w.text.equalsIgnoreCase(k)) {
+                    if (word.text.equalsIgnoreCase(k)) {
                         s = 3;
                     }
-                } else if (w.text.equals(k)) {
+                } else if (word.text.equals(k)) {
                     s = 3;
-                } else if (w.text.startsWith(k)) {
+                } else if (word.text.startsWith(k)) {
                     s = 2;
-                } else if (w.text.contains(k)) {
+                } else if (word.text.contains(k)) {
                     s = 1;
                 }
                 if (s > bestScore) {
                     bestScore = s;
-                    best = w;
+                    best = word;
                 }
             }
         }
@@ -534,12 +669,11 @@ public class CheckinAccessibilityService extends AccessibilityService {
             }
             finish(code, msg);
         });
-        // 截图回调万一不来，5 秒后照样收尾
         handler.postDelayed(() -> {
             if (busy) {
                 finish(code, msg);
             }
-        }, 5_000L);
+        }, 3_000L);
     }
 
     private void finish(int code, String msg) {
@@ -553,7 +687,9 @@ public class CheckinAccessibilityService extends AccessibilityService {
             handler.removeCallbacks(timeoutTask);
         }
         releaseWake();
-        Logger.log(this, "结束：" + msg);
+        long cost = System.currentTimeMillis() - taskStart;
+        Logger.log(this, "结束（耗时 " + (cost / 1000.0) + " 秒）：" + msg
+                + (ocrError.isEmpty() ? "" : "，OCR 备注：" + ocrError));
         Config.setLastResult(this, msg);
 
         int recStatus = code == R_SUCCESS ? Records.SUCCESS
@@ -565,8 +701,8 @@ public class CheckinAccessibilityService extends AccessibilityService {
             int fails = Config.incFail(this);
             Notifier.notify(this, Notifier.ID_FAIL, "签到未成功", msg);
             if (fails < 3) {
-                CheckinScheduler.scheduleRetry(this, fails * 5L);
-                Logger.log(this, "已安排第 " + fails + " 次重试（" + (fails * 5) + " 分钟）");
+                CheckinScheduler.scheduleRetry(this, fails * 3L);
+                Logger.log(this, "已安排第 " + fails + " 次重试（" + (fails * 3) + " 分钟）");
             } else {
                 Logger.log(this, "连续失败 3 次，今日停止自动重试，请人工检查");
                 Notifier.notify(this, Notifier.ID_FAIL, "连续失败，已暂停今日自动重试", msg);
@@ -639,20 +775,57 @@ public class CheckinAccessibilityService extends AccessibilityService {
         wakeLock = null;
     }
 
-    private void tapWord(ScreenOcr.Word w, String what) {
-        if (w == null) {
+    private void tapWord(ScreenOcr.Word word, String what) {
+        if (word == null) {
             return;
         }
-        Logger.log(this, "点击" + what + "：\"" + w.text + "\" @"
-                + w.centerX() + "," + w.centerY());
-        tap(w.centerX(), w.centerY());
+        int x = word.centerX();
+        int y = word.centerY();
+        long now = System.currentTimeMillis();
+        // 同一处 1.5 秒内不重复点：避免页面切换途中连点，跳到别的页面
+        if (x == lastTapX && y == lastTapY && now - lastTapAt < 1500L) {
+            nextDelay = 400L;
+            return;
+        }
+        lastTapX = x;
+        lastTapY = y;
+        lastTapAt = now;
+        Logger.log(this, "点击" + what + "：\"" + word.text + "\" @" + x + "," + y);
+        tap(x, y);
+        nextDelay = SETTLE_MS;
+        settleUntil = now + SETTLE_MS;
     }
 
-    private void tapBottomRight(String what) {
+    /**
+     * 兜底点底部标签：用识别到的底部标签行的真实 y 坐标，
+     * 不点屏幕最底部（那里是系统导航栏，会误触返回/主页把 App 顶掉）。
+     */
+    private boolean tapBottomTab(List<ScreenOcr.Word> words, String what) {
         int w = getResources().getDisplayMetrics().widthPixels;
         int h = getResources().getDisplayMetrics().heightPixels;
-        Logger.log(this, what + " @" + (int) (w * 0.85f) + "," + (int) (h * 0.94f));
-        tap((int) (w * 0.85f), (int) (h * 0.94f));
+        int y = -1;
+        for (ScreenOcr.Word word : words) {
+            if (word == null || word.text.isEmpty()) {
+                continue;
+            }
+            int cy = word.centerY();
+            if (cy > h * 0.84f && cy < h * 0.97f) {
+                y = Math.max(y, cy);
+            }
+        }
+        if (y < 0) {
+            return false;
+        }
+        int x = (int) (w * 0.87f);
+        long now = System.currentTimeMillis();
+        Logger.log(this, what + " @" + x + "," + y);
+        tap(x, y);
+        lastTapX = x;
+        lastTapY = y;
+        lastTapAt = now;
+        nextDelay = SETTLE_MS;
+        settleUntil = now + SETTLE_MS;
+        return true;
     }
 
     private boolean tap(int x, int y) {
@@ -660,7 +833,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
             Path p = new Path();
             p.moveTo(x, y);
             GestureDescription.StrokeDescription stroke =
-                    new GestureDescription.StrokeDescription(p, 0, 120);
+                    new GestureDescription.StrokeDescription(p, 0, 100);
             GestureDescription gesture = new GestureDescription.Builder().addStroke(stroke).build();
             return dispatchGesture(gesture, null, null);
         } catch (Throwable t) {
@@ -674,12 +847,14 @@ public class CheckinAccessibilityService extends AccessibilityService {
             int w = getResources().getDisplayMetrics().widthPixels;
             int h = getResources().getDisplayMetrics().heightPixels;
             Path p = new Path();
-            p.moveTo(w * 0.5f, h * 0.78f);
-            p.lineTo(w * 0.5f, h * 0.32f);
+            p.moveTo(w * 0.5f, h * 0.72f);
+            p.lineTo(w * 0.5f, h * 0.36f);
             GestureDescription.StrokeDescription stroke =
-                    new GestureDescription.StrokeDescription(p, 0, 420);
+                    new GestureDescription.StrokeDescription(p, 0, 360);
             dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
             Logger.log(this, what);
+            settleUntil = System.currentTimeMillis() + 380L;
+            nextDelay = 380L;
         } catch (Throwable t) {
             Logger.log(this, "滑动失败：" + t);
         }
