@@ -50,11 +50,12 @@ public class CheckinAccessibilityService extends AccessibilityService {
     public static final String EXTRA_MSG = "msg";
 
     private static final int ST_OPEN = 1;
-    private static final int ST_CHARGE = 2;
-    private static final int ST_MINE = 3;
-    private static final int ST_MEMBER = 4;
-    private static final int ST_SIGN = 5;
-    private static final int ST_VERIFY = 6;
+    private static final int ST_OWNER = 2;
+    private static final int ST_CHARGE = 3;
+    private static final int ST_MINE = 4;
+    private static final int ST_MEMBER = 5;
+    private static final int ST_SIGN = 6;
+    private static final int ST_VERIFY = 7;
 
     private static final int R_SUCCESS = 1;
     private static final int R_SKIP = 2;
@@ -94,7 +95,6 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private int scrollMemberCount;
     private int scrollSignCount;
     private int signTapCount;
-    private boolean ownerTried;
 
     private int lastTapX = -1;
     private int lastTapY = -1;
@@ -189,7 +189,6 @@ public class CheckinAccessibilityService extends AccessibilityService {
         scrollMemberCount = 0;
         scrollSignCount = 0;
         signTapCount = 0;
-        ownerTried = false;
         lastTapX = -1;
         lastTapY = -1;
         lastTapAt = 0;
@@ -303,12 +302,12 @@ public class CheckinAccessibilityService extends AccessibilityService {
 
         switch (stage) {
             case ST_OPEN:
-                if (now - taskStart < LAUNCH_GAP_MS) {
-                    return;
-                }
-                stage = ST_CHARGE;
+                stage = ST_OWNER;
                 stageStart = now;
-                doCharge(words, now);
+                doOwner(words, now);
+                return;
+            case ST_OWNER:
+                doOwner(words, now);
                 return;
             case ST_CHARGE:
                 doCharge(words, now);
@@ -330,45 +329,60 @@ public class CheckinAccessibilityService extends AccessibilityService {
         }
     }
 
-    /** 找「滴滴充电」入口：首页上直接点。 */
+    /** 首页顶部「出行 / 送货 / 旅行 / 车主」分类栏，点「车主」。 */
+    private void doOwner(List<ScreenOcr.Word> words, long now) {
+        ScreenOcr.Word tab = findBest(words, kwOwner, 0.02f, 0.22f);
+        if (tab != null) {
+            tapWord(tab, "顶部「车主」分类");
+            enter(ST_CHARGE, now);
+            return;
+        }
+        // 有些版本首页就能直接看到充电入口，那就省一步
+        ScreenOcr.Word charge = findBest(words, kwCharge, 0.05f, 0.95f);
+        if (charge != null) {
+            tapWord(charge, "「滴滴充电」入口（首页直接可见）");
+            enter(ST_MINE, now);
+            return;
+        }
+        if (now - stageStart > 2200) {
+            if (scrollChargeCount < MAX_SCROLL_CHARGE) {
+                scrollChargeCount++;
+                swipeUp("首页没看到入口，下滑看看（第 " + scrollChargeCount + " 次）");
+                stageStart = now;
+                return;
+            }
+            finish(R_FAIL, "首页顶部没找到「车主」分类（可改 kw_owner）");
+        }
+    }
+
+    /** 车主页里找「滴滴充电」入口。 */
     private void doCharge(List<ScreenOcr.Word> words, long now) {
-        ScreenOcr.Word w = findBest(words, kwCharge, 0.06f, 0.94f);
+        ScreenOcr.Word w = findBest(words, kwCharge, 0.05f, 0.95f);
         if (w != null) {
             tapWord(w, "「滴滴充电」入口");
             enter(ST_MINE, now);
             return;
         }
-        if (!ownerTried && now - stageStart > 1200) {
-            ScreenOcr.Word owner = findBest(words, kwOwner, 0.0f, 0.55f);
-            if (owner != null) {
-                ownerTried = true;
-                tapWord(owner, "顶部「车主」（首页没有充电入口时走备用路径）");
-                enter(ST_CHARGE, now);
-                return;
-            }
-        }
-        if (ownerTried && now - stageStart > 2600) {
-            // 车主页里再找一次充电入口，找不到就滑一下
+        if (now - stageStart > 700) {
             if (scrollChargeCount < MAX_SCROLL_CHARGE) {
                 scrollChargeCount++;
-                swipeUp("找充电入口，下滑（第 " + scrollChargeCount + " 次）");
+                swipeUp("车主页下滑找「滴滴充电」（第 " + scrollChargeCount + " 次）");
+                stageStart = now;
                 return;
             }
-        }
-        if (now - stageStart > STAGE_TIMEOUT_MS) {
-            finish(R_FAIL, "没找到「滴滴充电」入口（首页文字已记到日志，可改 kw_charge）");
+            finish(R_FAIL, "车主页里没找到「滴滴充电」入口（可改 kw_charge）");
         }
     }
 
     /** 底部导航「我的」：只在屏幕下半部分找。 */
     private void doMine(List<ScreenOcr.Word> words, long now) {
-        ScreenOcr.Word w = findBest(words, kwMine, 0.55f, 1.0f);
+        ScreenOcr.Word w = findBest(words, kwMine, 0.62f, 1.0f);
         if (w != null) {
             tapWord(w, "底部「我的」");
             enter(ST_MEMBER, now);
             return;
         }
-        if (now - stageStart > 2600) {
+        if (now - stageStart > 2200) {
             if (tapBottomTab(words, "兜底点底部「我的」（沿用底部标签行的 y）")) {
                 enter(ST_MEMBER, now);
                 return;
@@ -444,6 +458,9 @@ public class CheckinAccessibilityService extends AccessibilityService {
         stageStart = now;
         closeCount = 0;
         nextDelay = RETRY_MS;
+        if (newStage == ST_CHARGE || newStage == ST_OWNER) {
+            scrollChargeCount = 0;
+        }
     }
 
     // ---------------------------------------------------------------- 区域与弹窗
@@ -453,16 +470,19 @@ public class CheckinAccessibilityService extends AccessibilityService {
         int w = getResources().getDisplayMetrics().widthPixels;
         int h = getResources().getDisplayMetrics().heightPixels;
         switch (s) {
+            case ST_OWNER:
+                // 只认顶部「出行 / 送货 / 旅行 / 车主」这一行
+                return new Rect(0, (int) (h * 0.02f), w, (int) (h * 0.24f));
             case ST_MINE:
                 return new Rect(0, (int) (h * 0.55f), w, h);
             case ST_MEMBER:
-                return new Rect(0, (int) (h * 0.04f), w, (int) (h * 0.75f));
+                return new Rect(0, (int) (h * 0.03f), w, (int) (h * 0.75f));
             case ST_SIGN:
                 return new Rect(0, (int) (h * 0.10f), w, (int) (h * 0.90f));
             case ST_VERIFY:
                 return new Rect(0, (int) (h * 0.12f), w, (int) (h * 0.82f));
             default:
-                return new Rect(0, (int) (h * 0.06f), w, (int) (h * 0.94f));
+                return new Rect(0, (int) (h * 0.03f), w, (int) (h * 0.94f));
         }
     }
 
@@ -809,7 +829,8 @@ public class CheckinAccessibilityService extends AccessibilityService {
                 continue;
             }
             int cy = word.centerY();
-            if (cy > h * 0.84f && cy < h * 0.97f) {
+            // 底部标签行一般落在 66%~88% 高度，再往下的最底部是系统导航栏，不能点
+            if (cy > h * 0.66f && cy < h * 0.90f) {
                 y = Math.max(y, cy);
             }
         }
