@@ -1,43 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 从首页进入充电页的入口文案（可自行增补） -->
-    <string-array name="nav_keywords">
+    <!--
+        注意：v1.2 起改为「截图 + OCR 文字识别 + 坐标点击」，下面的关键词是拿 OCR 结果做包含匹配，
+        页面改版时只需要改这里，不用改代码。单字符（× ✕ X）按完全相等匹配，避免误点。
+    -->
+
+    <!-- 顶部「车主」入口 -->
+    <string-array name="kw_owner">
+        <item>车主</item>
+    </string-array>
+
+    <!-- 车主页里的「滴滴充电 / 小桔充电」入口 -->
+    <string-array name="kw_charge">
+        <item>滴滴充电</item>
         <item>小桔充电</item>
         <item>充电</item>
     </string-array>
 
-    <!-- 签到入口按钮文案 -->
-    <string-array name="entry_keywords">
+    <!-- 底部导航「我的」 -->
+    <string-array name="kw_mine">
+        <item>我的</item>
+        <item>个人中心</item>
+    </string-array>
+
+    <!-- 「会员中心」入口 -->
+    <string-array name="kw_member">
+        <item>会员中心</item>
+        <item>会员</item>
+    </string-array>
+
+    <!-- 签到按钮文案 -->
+    <string-array name="kw_checkin">
         <item>立即签到</item>
         <item>每日签到</item>
-        <item>签到领</item>
         <item>签到有礼</item>
+        <item>去签到</item>
         <item>签到</item>
     </string-array>
 
-    <!-- 已签到的判定文案（必须先于入口文案判断） -->
-    <string-array name="signed_keywords">
-        <item>已签到</item>
+    <!-- 已经签过的判定文案（优先于签到按钮判断） -->
+    <string-array name="kw_signed">
         <item>今日已签到</item>
+        <item>已签到</item>
         <item>明天再来</item>
         <item>明日再来</item>
         <item>已领取</item>
     </string-array>
 
     <!-- 签到成功的判定文案 -->
-    <string-array name="success_keywords">
+    <string-array name="kw_success">
         <item>签到成功</item>
         <item>领取成功</item>
         <item>恭喜</item>
         <item>获得</item>
+        <item>已签到</item>
     </string-array>
 
-    <!-- 需要关闭的弹窗按钮文案 -->
-    <string-array name="popup_keywords">
-        <item>以后再说</item>
-        <item>暂不需要</item>
-        <item>我知道了</item>
-        <item>跳过</item>
+    <!-- 弹窗上「一律点关闭」的按钮文案 -->
+    <string-array name="kw_close">
         <item>关闭</item>
+        <item>×</item>
+        <item>✕</item>
+        <item>X</item>
+        <item>知道了</item>
+        <item>我知道了</item>
+        <item>取消</item>
+        <item>跳过</item>
+        <item>以后再说</item>
+        <item>暂不</item>
+        <item>稍后</item>
+        <item>不再提示</item>
+        <item>放弃</item>
+    </string-array>
+
+    <!-- 兜底：如果弹窗只给「同意」才能继续，这些文案在最后才会被点 -->
+    <string-array name="kw_confirm">
+        <item>同意并继续</item>
+        <item>同意</item>
+        <item>我已知晓</item>
     </string-array>
 </resources>

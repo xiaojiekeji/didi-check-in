@@ -286,11 +286,21 @@ public class MainActivity extends Activity {
 
         row.addView(head);
 
+        TextView sub = new TextView(this);
+        int streakAt = Records.streakAt(this, it.day);
+        sub.setText("连续第 " + streakAt + " 天"
+                + (TextUtils.isEmpty(it.source) ? "" : "  ·  " + it.source));
+        sub.setTextSize(11);
+        sub.setTextColor(streakAt > 0 ? COLOR_OK : COLOR_MUTED);
+        row.addView(sub);
+
         TextView msg = new TextView(this);
-        msg.setText(it.msg + (TextUtils.isEmpty(it.source) ? "" : "  ·  " + it.source));
+        msg.setText(it.msg);
         msg.setTextSize(11);
         msg.setTextColor(COLOR_MUTED);
         row.addView(msg);
+
+        addThumbIfAny(row, it);
 
         View divider = new View(this);
         divider.setBackgroundColor(Color.parseColor("#E5E7EB"));
@@ -299,6 +309,72 @@ public class MainActivity extends Activity {
         lpDiv.topMargin = 8;
         row.addView(divider, lpDiv);
         return row;
+    }
+
+    /** 记录里的签到截图：缩略图直出，点一下看大图。 */
+    private void addThumbIfAny(LinearLayout row, Records.Item it) {
+        if (TextUtils.isEmpty(it.shotPath)) {
+            return;
+        }
+        File f = new File(it.shotPath);
+        if (!f.exists()) {
+            return;
+        }
+        android.graphics.Bitmap thumb = decodeSampled(it.shotPath, 220);
+        if (thumb == null) {
+            return;
+        }
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams lpBox = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpBox.topMargin = 6;
+
+        ImageView iv = new ImageView(this);
+        iv.setImageBitmap(thumb);
+        iv.setAdjustViewBounds(true);
+        iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        iv.setBackgroundColor(Color.parseColor("#E5E7EB"));
+        iv.setPadding(2, 2, 2, 2);
+        iv.setOnClickListener(v -> showShotDialog(it.shotPath, "签到截图 · " + it.timeText()));
+        box.addView(iv, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, 220));
+        row.addView(box, lpBox);
+    }
+
+    private android.graphics.Bitmap decodeSampled(String path, int reqHeight) {
+        try {
+            android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+            opts.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(path, opts);
+            int h = opts.outHeight;
+            int sample = 1;
+            while (h / sample > reqHeight * 2) {
+                sample *= 2;
+            }
+            opts.inJustDecodeBounds = false;
+            opts.inSampleSize = sample;
+            return android.graphics.BitmapFactory.decodeFile(path, opts);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private void showShotDialog(String path, String title) {
+        File f = new File(path);
+        if (!f.exists()) {
+            toast("截图文件不存在：" + path);
+            return;
+        }
+        ImageView iv = new ImageView(this);
+        iv.setAdjustViewBounds(true);
+        iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        iv.setImageBitmap(decodeSampled(path, 900));
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setView(iv)
+                .setPositiveButton("关闭", null)
+                .show();
     }
 
     private void confirmClearRecords() {

@@ -41,6 +41,7 @@ public final class Records {
         public int status;
         public String source;
         public String msg;
+        public String shotPath;
 
         public String statusText() {
             switch (status) {
@@ -61,6 +62,11 @@ public final class Records {
     // ---------------------------------------------------------------- 写入
 
     public static synchronized void add(Context c, int status, String msg, String source) {
+        add(c, status, msg, source, "");
+    }
+
+    public static synchronized void add(Context c, int status, String msg, String source,
+                                        String shotPath) {
         long now = System.currentTimeMillis();
         Item it = new Item();
         it.day = DAY.format(new Date(now));
@@ -68,6 +74,7 @@ public final class Records {
         it.status = status;
         it.source = source == null ? "" : source;
         it.msg = msg == null ? "" : msg;
+        it.shotPath = shotPath == null ? "" : shotPath;
         try {
             File f = new File(c.getFilesDir(), FILE_NAME);
             FileOutputStream fos = new FileOutputStream(f, true);
@@ -84,8 +91,9 @@ public final class Records {
     }
 
     private static String line(Item it) {
+        // 用 | 分隔说明字段，避免路径里的字符冲突；前 5 列保持旧格式兼容
         return it.day + TAB + it.at + TAB + it.status + TAB
-                + clean(it.source) + TAB + clean(it.msg);
+                + clean(it.source) + TAB + clean(it.msg) + TAB + clean(it.shotPath);
     }
 
     private static String clean(String s) {
@@ -168,6 +176,7 @@ public final class Records {
             it.status = Integer.parseInt(p[2]);
             it.source = p[3];
             it.msg = p[4];
+            it.shotPath = p.length >= 6 ? p[5] : "";
             return it;
         } catch (Exception e) {
             return null;
@@ -221,6 +230,31 @@ public final class Records {
         return 1;
     }
 
+    /** 某一天结束时，往回数连续成功了多少天（含当天）。 */
+    public static int streakAt(Context c, String day) {
+        List<Item> all = readAll(c);
+        Calendar cal = Calendar.getInstance();
+        try {
+            cal.setTime(DAY.parse(day));
+        } catch (Exception e) {
+            return 0;
+        }
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        int streak = 0;
+        for (int guard = 0; guard < 365; guard++) {
+            if (dayBestStatus(all, DAY.format(cal.getTime())) >= 2) {
+                streak++;
+                cal.add(Calendar.DAY_OF_YEAR, -1);
+            } else {
+                break;
+            }
+        }
+        return streak;
+    }
+
     public static boolean todayDone(Context c) {
         Item it = today(c);
         return it != null && rank(it.status) >= 2;
@@ -256,8 +290,7 @@ public final class Records {
         return streak;
     }
 
-    private static int dayBestStatus(List<Item> all, String day) {
-        int best = 0;
+    private static int dayBestStatus(List<Item> all, String day) {        int best = 0;
         for (Item it : all) {
             if (day.equals(it.day)) {
                 best = Math.max(best, rank(it.status));
