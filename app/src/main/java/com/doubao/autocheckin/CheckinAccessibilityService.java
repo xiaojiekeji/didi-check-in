@@ -62,9 +62,10 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private static final int R_FAIL = 3;
 
     /** 点完等页面切过去的时间。 */
-    private static final long SETTLE_MS = 320L;
-    /** 没找到目标时，隔多久再看一眼。 */
-    private static final long RETRY_MS = 240L;
+    private static final long SETTLE_MS = 360L;
+    /** 没找到目标时，隔多久再看一眼。
+     *  注意：系统限制两次 takeScreenshot 间隔太短会直接失败（错误码 3），所以不能低于 480ms。 */
+    private static final long RETRY_MS = 480L;
     /** 拉起 App 后第一帧的等待。 */
     private static final long LAUNCH_GAP_MS = 900L;
     /** 整轮上限（正常路径 5~10 秒完事，这个只是保险）。 */
@@ -273,7 +274,16 @@ public class CheckinAccessibilityService extends AccessibilityService {
             if (!busy) {
                 return;
             }
+            // 自己 App 还在前台（刚点「开始打卡」那一两秒）就什么都别点，
+            // 否则 OCR 会把自己 App 的标题「滴滴充电自动签到」当成充电入口点掉
+            if (isOwnAppForeground()) {
+                Logger.log(this, "等待滴滴切到前台…（当前仍是我方界面）");
+                nextDelay = 500L;
+                handler.postDelayed(tick, nextDelay);
+                return;
+            }
             try {
+                logWords(words);
                 step(words);
             } catch (Throwable t) {
                 Logger.log(this, "执行异常：" + t);
@@ -287,6 +297,59 @@ public class CheckinAccessibilityService extends AccessibilityService {
             long delay = now < settleUntil ? (settleUntil - now) : nextDelay;
             handler.postDelayed(tick, delay);
         });
+    }
+
+    private boolean isOwnAppForeground() {
+        try {
+            AccessibilityNodeInfo root = getRootInActiveWindow();
+            if (root == null) {
+                return false;
+            }
+            CharSequence p = root.getPackageName();
+            return p != null && getPackageName().equals(p.toString());
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** 把每帧识别到的文字打进日志，方便真机上调关键词和坐标。 */
+    private void logWords(List<ScreenOcr.Word> words) {
+        if (words == null || words.isEmpty()) {
+            Logger.log(this, "阶段 " + stageName() + " 未识别到任何文字");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("阶段 ").append(stageName())
+                .append(" 识别 ").append(words.size()).append(" 条：");
+        int n = 0;
+        for (ScreenOcr.Word w : words) {
+            if (n++ >= 14 || w == null || w.text.isEmpty()) {
+                continue;
+            }
+            sb.append("\"").append(w.text).append("\"(").append(w.centerX())
+                    .append(",").append(w.centerY()).append(") ");
+        }
+        Logger.log(this, sb.toString());
+    }
+
+    private String stageName() {
+        switch (stage) {
+            case ST_OPEN:
+                return "启动";
+            case ST_OWNER:
+                return "找车主分类";
+            case ST_CHARGE:
+                return "找滴滴充电";
+            case ST_MINE:
+                return "找我的";
+            case ST_MEMBER:
+                return "找会员中心";
+            case ST_SIGN:
+                return "找签到";
+            case ST_VERIFY:
+                return "校验结果";
+            default:
+                return String.valueOf(stage);
+        }
     }
 
     // ---------------------------------------------------------------- 状态机
@@ -887,11 +950,32 @@ public class CheckinAccessibilityService extends AccessibilityService {
         void onShot(Bitmap bitmap, String error);
     }
 
+    /** 系统对 takeScreenshot 有最小间隔限制，太密会直接返回错误码 3，这里主动限流。 */
+    private static final long MIN_SHOT_INTERVAL_MS = 480L;
+    private long lastShotAt;
+
     private void captureScreen(final ShotCallback cb) {
         if (Build.VERSION.SDK_INT < 30) {
             cb.onShot(null, "系统低于 Android 11，无截图权限，改用控件文字");
             return;
         }
+        long now = System.currentTimeMillis();
+        long wait = MIN_SHOT_INTERVAL_MS - (now - lastShotAt);
+        if (wait > 0) {
+            handler.postDelayed(() -> {
+                if (!busy) {
+                    ocrBusy = false;
+                    return;
+                }
+                startShot(cb);
+            }, wait);
+            return;
+        }
+        startShot(cb);
+    }
+
+    private void startShot(ShotCallback cb) {
+        lastShotAt = System.currentTimeMillis();
         try {
             takeShot(cb);
         } catch (Throwable t) {
