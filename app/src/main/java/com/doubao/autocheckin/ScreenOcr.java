@@ -84,20 +84,20 @@ public final class ScreenOcr {
             return out;
         }
         for (Text.TextBlock block : result.getTextBlocks()) {
-            List<Text.Element> elements = block.getElements();
-            if (elements != null && !elements.isEmpty()) {
-                for (Text.Element el : elements) {
-                    String t = el.getText();
-                    if (t != null && !t.trim().isEmpty() && el.getBoundingBox() != null) {
-                        out.add(new Word(t, el.getBoundingBox()));
-                    }
+            if (block == null) {
+                continue;
+            }
+            List<Text.Line> lines = block.getLines();
+            if (lines == null) {
+                continue;
+            }
+            for (Text.Line line : lines) {
+                if (line == null) {
+                    continue;
                 }
-            } else {
-                for (Text.Line line : block.getLines()) {
-                    String t = line.getText();
-                    if (t != null && !t.trim().isEmpty() && line.getBoundingBox() != null) {
-                        out.add(new Word(t, line.getBoundingBox()));
-                    }
+                String t = line.getText();
+                if (t != null && !t.trim().isEmpty() && line.getBoundingBox() != null) {
+                    out.add(new Word(t, line.getBoundingBox()));
                 }
             }
         }
