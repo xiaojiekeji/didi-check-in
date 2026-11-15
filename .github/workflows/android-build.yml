@@ -58,9 +58,17 @@ jobs:
         run: |
           {
             echo ""
-            echo "### build.log tail"
+            echo "### key lines"
             echo '```text'
-            tail -n 80 build.log 2>/dev/null || echo "no build.log"
+            grep -n -E "FAILURE|FAILED|error:|e: |An exception|What went wrong|Execution failed|Caused by|Could not|Unsupported" build.log 2>/dev/null | head -n 60 || echo "grep none"
+            echo '```'
+            echo "### first lines around failure"
+            echo '```text'
+            grep -n "FAILURE: Build failed" build.log 2>/dev/null | head -n 1 || true
+            echo '```'
+            echo "### log tail 200"
+            echo '```text'
+            tail -n 200 build.log 2>/dev/null || echo "no build.log"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
