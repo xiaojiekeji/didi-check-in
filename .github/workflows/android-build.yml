@@ -49,7 +49,20 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee build.log
+
+      - name: Compile log tail (always visible in job summary)
+        if: always()
+        run: |
+          {
+            echo ""
+            echo "### build.log tail"
+            echo '```text'
+            tail -n 80 build.log 2>/dev/null || echo "no build.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Show APK info
         run: ls -lh app/build/outputs/apk/debug/
