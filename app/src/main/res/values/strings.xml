@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">滴滴充电自动签到</string>
+    <string name="service_label">滴滴充电自动签到服务</string>
+    <string name="service_desc">用于自动打开滴滴出行并完成「小桔充电」每日签到，仅在本机执行、不联网上传任何数据。</string>
+</resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 从首页进入充电页的入口文案（可自行增补） -->
+    <string-array name="nav_keywords">
+        <item>小桔充电</item>
+        <item>充电</item>
+    </string-array>
+
+    <!-- 签到入口按钮文案 -->
+    <string-array name="entry_keywords">
+        <item>立即签到</item>
+        <item>每日签到</item>
+        <item>签到领</item>
+        <item>签到有礼</item>
+        <item>签到</item>
+    </string-array>
+
+    <!-- 已签到的判定文案（必须先于入口文案判断） -->
+    <string-array name="signed_keywords">
+        <item>已签到</item>
+        <item>今日已签到</item>
+        <item>明天再来</item>
+        <item>明日再来</item>
+        <item>已领取</item>
+    </string-array>
+
+    <!-- 签到成功的判定文案 -->
+    <string-array name="success_keywords">
+        <item>签到成功</item>
+        <item>领取成功</item>
+        <item>恭喜</item>
+        <item>获得</item>
+    </string-array>
+
+    <!-- 需要关闭的弹窗按钮文案 -->
+    <string-array name="popup_keywords">
+        <item>以后再说</item>
+        <item>暂不需要</item>
+        <item>我知道了</item>
+        <item>跳过</item>
+        <item>关闭</item>
+    </string-array>
+</resources>
