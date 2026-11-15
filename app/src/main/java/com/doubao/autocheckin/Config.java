@@ -89,4 +89,46 @@ public final class Config {
     public static void setLastShot(Context c, String path) {
         sp(c).edit().putString("lastShot", path).apply();
     }
+
+    // ---------------------------------------------------------------- 未打卡提醒
+
+    public static final int DEF_REMIND_HOUR = 21;
+    public static final int DEF_REMIND_MINUTE = 0;
+
+    public static int remindHour(Context c) {
+        return sp(c).getInt("remindHour", DEF_REMIND_HOUR);
+    }
+
+    public static int remindMinute(Context c) {
+        return sp(c).getInt("remindMinute", DEF_REMIND_MINUTE);
+    }
+
+    public static void setRemindTime(Context c, int hour, int minute) {
+        sp(c).edit().putInt("remindHour", hour).putInt("remindMinute", minute).apply();
+    }
+
+    public static boolean isRemindEnabled(Context c) {
+        return sp(c).getBoolean("remindEnabled", true);
+    }
+
+    public static void setRemindEnabled(Context c, boolean enabled) {
+        sp(c).edit().putBoolean("remindEnabled", enabled).apply();
+    }
+
+    /** 今天是否已经弹过「未打卡」提醒，避免反复打扰。 */
+    public static String lastPromptDay(Context c) {
+        return sp(c).getString("lastPromptDay", "");
+    }
+
+    public static void setLastPromptDay(Context c, String day) {
+        sp(c).edit().putString("lastPromptDay", day).apply();
+    }
+
+    public static long nextRemind(Context c) {
+        return sp(c).getLong("nextRemind", 0L);
+    }
+
+    public static void setNextRemind(Context c, long at) {
+        sp(c).edit().putLong("nextRemind", at).apply();
+    }
 }

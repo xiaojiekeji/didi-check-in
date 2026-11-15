@@ -40,6 +40,11 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private static final int R_SKIP = 2;
     private static final int R_FAIL = 3;
 
+    /** 结果广播：界面上实时弹出成功/失败反馈。 */
+    public static final String ACTION_RESULT = "com.doubao.autocheckin.ACTION_RESULT";
+    public static final String EXTRA_STATUS = "status";
+    public static final String EXTRA_MSG = "msg";
+
     private static final long TICK_MS = 900L;
     private static final long TASK_TIMEOUT_MS = 90_000L;
     private static final long LAUNCH_TIMEOUT_MS = 15_000L;
@@ -56,6 +61,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private long stageStart;
     private int clickCount;
     private String pkg;
+    private String sourceLabel = "";
 
     private String[] navKws;
     private String[] entryKws;
@@ -82,6 +88,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
         Notifier.init(this);
         Logger.log(this, "无障碍服务已连接");
         CheckinScheduler.scheduleDaily(this);
+        CheckinScheduler.scheduleReminderDaily(this);
     }
 
     @Override
@@ -120,6 +127,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
         }
         busy = true;
         clickCount = 0;
+        sourceLabel = source == null ? "" : source;
         pkg = Config.targetPackage(this);
         Logger.log(this, "==== 开始执行（" + source + "），目标包名 " + pkg + " ====");
         acquireWake();
@@ -252,6 +260,12 @@ public class CheckinAccessibilityService extends AccessibilityService {
         Logger.log(this, "结束：" + msg);
         Config.setLastResult(this, msg);
 
+        // 落一条打卡记录，并广播给界面做即时反馈
+        int recStatus = code == R_SUCCESS ? Records.SUCCESS
+                : (code == R_SKIP ? Records.SKIP : Records.FAIL);
+        Records.add(this, recStatus, msg, sourceLabel);
+        broadcastResult(code, msg);
+
         if (code == R_FAIL) {
             int fails = Config.incFail(this);
             Notifier.notify(this, Notifier.ID_FAIL, "签到未成功", msg);
@@ -271,6 +285,21 @@ public class CheckinAccessibilityService extends AccessibilityService {
     }
 
     // ---------------------------------------------------------------- 动作实现
+
+    private void broadcastResult(int code, String msg) {
+        try {
+            Intent i = new Intent(ACTION_RESULT);
+            i.setPackage(getPackageName());
+            i.putExtra(EXTRA_STATUS, code);
+            i.putExtra(EXTRA_MSG, msg);
+            sendBroadcast(i);
+        } catch (Exception ignored) {
+        }
+    }
+
+    public boolean isBusy() {
+        return busy;
+    }
 
     private void launchTarget() {
         try {

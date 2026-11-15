@@ -25,6 +25,60 @@
             android:textSize="12sp"
             android:textColor="#6B7280" />
 
+        <!-- ============================== 今日打卡状态卡 ============================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="#EDF2FF"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="今日打卡"
+                android:textColor="#374151"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvTodayStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="未打卡"
+                android:textColor="#B45309"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvTodayDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="今天还没有成功签到记录"
+                android:textColor="#4B5563"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvStreak"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="连续打卡 0 天"
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btnCheckinNow"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="开始打卡"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -122,19 +176,34 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:checked="true"
-            android:text="启用每日自动签到（关闭后只保留手动测试）" />
+            android:text="启用每日自动签到（关闭后只保留手动打卡）" />
+
+        <CheckBox
+            android:id="@+id/cbRemind"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="当天没打卡时发通知提醒" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="提醒时间（到点时如果今天还没成功打卡就提醒）"
+            android:textSize="13sp" />
+
+        <TimePicker
+            android:id="@+id/remindPicker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:timePickerMode="spinner" />
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="保存配置并重新排程" />
-
-        <Button
-            android:id="@+id/btnRunNow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="立即测试执行一次" />
 
         <TextView
             android:id="@+id/tvNextRun"
@@ -145,11 +214,55 @@
             android:textSize="12sp"
             android:textColor="#6B7280" />
 
+        <!-- ============================== 打卡记录 ============================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="③ 打卡记录"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnRefreshRecords"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="刷新" />
+
+            <Button
+                android:id="@+id/btnClearRecords"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清空" />
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="6dp"
+            android:background="#F7F8FA"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:id="@+id/llRecords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </ScrollView>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="③ 运行日志"
+            android:text="④ 运行日志"
             android:textStyle="bold"
             android:textSize="15sp" />
 
@@ -182,7 +295,7 @@
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="260dp"
+            android:layout_height="240dp"
             android:layout_marginTop="6dp"
             android:background="#F4F6FA"
             android:padding="8dp">

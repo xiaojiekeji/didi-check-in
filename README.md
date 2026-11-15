@@ -15,18 +15,30 @@
 - 通知栏汇报结果；无障碍未开启时直接提醒
 - 文案关键词（入口/按钮/已签到/成功/弹窗）全部可在资源文件里改，页面改版不需要重写代码
 
+## 界面与打卡记录
+
+- **今日状态卡**：顶部直接显示今天「已打卡成功 / 已完成（已签到）/ 打卡失败 / 还没打卡」，附执行时间、来源（定时任务、手动、重试）和连续打卡天数
+- **开始打卡按钮**：不用等定时任务，随时点一下就手动执行一次；执行中按钮会显示「打卡执行中…」并禁用，避免重复触发
+- **打卡记录列表**：最近 30 天逐条列出日期、时间、状态（成功 / 已签到 / 失败，颜色区分）与失败原因，可一键清空
+- **结果反馈**：执行结束时界面即时收到广播，成功弹 Toast、失败弹对话框（可「再试一次」或「查看日志」）
+- **未打卡弹窗**：过了每日执行时刻还没打卡，打开 App 会自动弹窗，选项为「立即打卡 / 30 分钟后提醒 / 今天不再提醒」；同一天只弹一次
+- **未打卡通知**：另设提醒时刻（默认 21:00），到点若今天仍未成功打卡就发高优先级通知，点通知直接进 App 并触发弹窗
+- **连续打卡天数**：自动统计从今天（或昨天）往前连续成功的天数
+
 ## 目录结构
 
 ```
 app/src/main/java/com/doubao/autocheckin/
-├── MainActivity.java                  # 配置与状态面板
-├── CheckinAccessibilityService.java   # 核心状态机（轮询式）
-├── CheckinScheduler.java              # 每日排程 / 重试排程
-├── AlarmReceiver.java                 # 闹钟触发
+├── MainActivity.java                  # 界面：今日状态、打卡记录、配置与日志
+├── CheckinAccessibilityService.java   # 核心状态机（轮询式）+ 结果广播
+├── CheckinScheduler.java              # 每日排程 / 重试排程 / 未打卡提醒排程
+├── AlarmReceiver.java                 # 签到闹钟触发
+├── ReminderReceiver.java              # 未打卡提醒触发
 ├── BootReceiver.java                  # 开机恢复排程
 ├── Config.java                        # 配置读写
+├── Records.java                       # 打卡记录（records.tsv，保留 120 天）
 ├── Logger.java                        # 本地日志
-└── Notifier.java                      # 通知
+└── Notifier.java                      # 结果通知 / 未打卡提醒通知
 app/src/main/res/values/arrays.xml      # 所有关键词（改这里适配页面）
 app/src/main/res/xml/accessibility_service_config.xml
 ```
@@ -49,8 +61,8 @@ gradle :app:assembleDebug      # 产物 app/build/outputs/apk/debug/app-debug.ap
    - 加入电池优化白名单（否则国产 ROM 会杀后台）
    - 允许精确闹钟（Android 12+ 必须，否则只能走近似闹钟）
    - 允许通知
-3. 设置执行时间与目标包名，点「保存配置并重新排程」
-4. 点「立即测试执行一次」，看日志与「最近截图」确认能走到签到按钮
+3. 设置执行时间、提醒时间与目标包名，点「保存配置并重新排程」
+4. 点顶部「开始打卡」（或原来的手动测试按钮已合并到这里），看记录列表与「最近截图」确认能走到签到按钮
 
 ## 适配页面改版
 

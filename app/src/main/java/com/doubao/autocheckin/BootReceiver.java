@@ -11,5 +11,6 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Logger.log(context, "开机/更新广播：" + (intent == null ? "-" : intent.getAction()) + "，恢复排程");
         CheckinScheduler.scheduleDaily(context);
+        CheckinScheduler.scheduleReminderDaily(context);
     }
 }
