@@ -97,6 +97,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private int scrollMemberCount;
     private int scrollSignCount;
     private int signTapCount;
+    private boolean signFirstScrollDone;
 
     private int lastTapX = -1;
     private int lastTapY = -1;
@@ -341,7 +342,11 @@ public class CheckinAccessibilityService extends AccessibilityService {
     }
 
     private String stageName() {
-        switch (stage) {
+        return stageNameOf(stage);
+    }
+
+    private String stageNameOf(int s) {
+        switch (s) {
             case ST_OPEN:
                 return "启动";
             case ST_OWNER:
@@ -357,7 +362,50 @@ public class CheckinAccessibilityService extends AccessibilityService {
             case ST_VERIFY:
                 return "校验结果";
             default:
-                return String.valueOf(stage);
+                return String.valueOf(s);
+        }
+    }
+
+    /**
+     * 猜当前停在哪个页面：会员中心（标题在顶部）/ 充电站列表（顶部「常用｜附近」）。
+     * 返回 0 表示认不出来，就按原阶段走。
+     */
+    private int guessPage(List<ScreenOcr.Word> words) {
+        int h = getResources().getDisplayMetrics().heightPixels;
+        boolean topMember = false;
+        boolean topCharge = false;
+        boolean bottomMine = false;
+        for (ScreenOcr.Word w : words) {
+            if (w == null || w.text.isEmpty()) {
+                continue;
+            }
+            String t = w.text.replace("|", "").replace(" ", "").trim();
+            if (t.endsWith("会员中心") && w.centerY() < h * 0.12f) {
+                topMember = true;
+            }
+            if ((t.equals("常用") || t.equals("附近")) && w.centerY() < h * 0.12f) {
+                topCharge = true;
+            }
+            if ((t.equals("我的") || t.endsWith("我的")) && w.centerY() > h * 0.60f) {
+                bottomMine = true;
+            }
+        }
+        if (topMember && !bottomMine) {
+            return ST_SIGN;
+        }
+        if (topCharge && bottomMine) {
+            return ST_MINE;
+        }
+        return 0;
+    }
+
+    private void forceStage(int newStage, long now) {
+        stage = newStage;
+        stageStart = now;
+        closeCount = 0;
+        nextDelay = RETRY_MS;
+        if (newStage == ST_SIGN) {
+            signFirstScrollDone = false;
         }
     }
 
@@ -377,6 +425,17 @@ public class CheckinAccessibilityService extends AccessibilityService {
         // 1) 系统「应用启动」确认框：点「始终打开」，绝不允许点「取消」
         if (tryLaunchDialog(words)) {
             return;
+        }
+
+        // 1.5) 页面自愈：滴滴常常停在上次留下的页面（直接就是会员中心/充电站列表），
+        //      这时不要再从头找「车主」，直接切到对应阶段
+        if (stage != ST_VERIFY) {
+            int guess = guessPage(words);
+            if (guess > 0 && guess != stage) {
+                Logger.log(this, "当前已在「" + stageNameOf(guess) + "」，自动切换阶段");
+                forceStage(guess, now);
+                return;
+            }
         }
 
         // 2) 弹窗优先：只有看起来真是弹窗才点关闭，正常页面绝不乱点
@@ -496,6 +555,13 @@ public class CheckinAccessibilityService extends AccessibilityService {
 
     /** 下滑找「签到」按钮。 */
     private void doSign(List<ScreenOcr.Word> words, long now) {
+        // 会员中心底部有个固定的「立即续费」浮层，会挡住签到区，先下滑一次让它让开
+        if (!signFirstScrollDone) {
+            signFirstScrollDone = true;
+            swipeUp("会员中心先下滑一次，把底部「立即续费」浮层让开");
+            stageStart = now;
+            return;
+        }
         // 先找按钮：签到日历里历史日期也可能写着「已签到」，有按钮就一律以按钮为准
         ScreenOcr.Word w = findCheckin(words);
         if (w != null) {
@@ -538,10 +604,15 @@ public class CheckinAccessibilityService extends AccessibilityService {
     }
 
     private void enter(int newStage, long now) {
+        int old = stage;
         stage = newStage;
         stageStart = now;
         closeCount = 0;
         nextDelay = RETRY_MS;
+        // 只有「从我的页点进会员中心」那一次需要先下滑让开续费浮层
+        if (newStage == ST_SIGN && old == ST_MEMBER) {
+            signFirstScrollDone = false;
+        }
         if (newStage == ST_CHARGE || newStage == ST_OWNER) {
             scrollChargeCount = 0;
         }
@@ -574,6 +645,10 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private boolean looksLikePopup(List<ScreenOcr.Word> words) {
         for (ScreenOcr.Word w : words) {
             if (w == null || w.text.isEmpty()) {
+                continue;
+            }
+            // 弹窗按钮都是短词（取消/关闭/知道了…）；「可随时取消」「取消订单」这类是正文，不能算
+            if (w.text.length() > 5) {
                 continue;
             }
             for (String k : kwPopup) {
@@ -718,8 +793,15 @@ public class CheckinAccessibilityService extends AccessibilityService {
                 continue;
             }
             String t = word.text;
+            // 签到按钮一定是个短词（立即签到 / 签到 / 打卡…）；
+            // 「连续签到最高可得」「签到规则」这类长文案是说明文字，点了会跳走
+            if (t.length() > 6) {
+                continue;
+            }
             if (t.contains("规则") || t.contains("记录") || t.contains("日历")
-                    || t.contains("说明") || t.contains("详情") || t.contains("查看") || t.contains("帮助")) {
+                    || t.contains("说明") || t.contains("详情") || t.contains("查看") || t.contains("帮助")
+                    || t.contains("最高") || t.contains("可得") || t.contains("奖励") || t.contains("连续签到")
+                    || t.contains("已签到") || t.contains("已领取")) {
                 continue;
             }
             int cy = word.centerY();
