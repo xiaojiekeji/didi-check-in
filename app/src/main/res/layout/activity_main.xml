@@ -205,6 +205,13 @@
             android:layout_height="wrap_content"
             android:text="保存配置并重新排程" />
 
+        <CheckBox
+            android:id="@+id/cbHideRecents"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="在最近任务卡片中隐藏（防一键清理误杀）" />
+
         <TextView
             android:id="@+id/tvNextRun"
             android:layout_width="match_parent"

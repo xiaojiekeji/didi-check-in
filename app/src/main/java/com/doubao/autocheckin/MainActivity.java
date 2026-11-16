@@ -1,6 +1,7 @@
 package com.doubao.autocheckin;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -59,6 +60,7 @@ public class MainActivity extends Activity {
     private EditText etPackage;
     private CheckBox cbEnabled;
     private CheckBox cbRemind;
+    private CheckBox cbHideRecents;
 
     private boolean receiverRegistered;
     private boolean dialogShowing;
@@ -114,6 +116,7 @@ public class MainActivity extends Activity {
         etPackage = findViewById(R.id.etPackage);
         cbEnabled = findViewById(R.id.cbEnabled);
         cbRemind = findViewById(R.id.cbRemind);
+        cbHideRecents = findViewById(R.id.cbHideRecents);
 
         timePicker.setIs24HourView(true);
         remindPicker.setIs24HourView(true);
@@ -123,6 +126,16 @@ public class MainActivity extends Activity {
         etPackage.setText(Config.targetPackage(this));
         cbEnabled.setChecked(Config.isEnabled(this));
         cbRemind.setChecked(Config.isRemindEnabled(this));
+        cbHideRecents.setChecked(Config.hideFromRecents(this));
+        cbHideRecents.setOnCheckedChangeListener((btn, checked) -> {
+            Config.setHideFromRecents(this, checked);
+            applyRecentsVisibility(checked);
+        });
+        applyRecentsVisibility(Config.hideFromRecents(this));
+
+        // 保活：常驻前台服务 + 15 分钟心跳，防止后台被杀导致闹钟不执行
+        KeepAliveService.start(this);
+        KeepAliveJobService.schedule(this);
 
         findViewById(R.id.btnAccessibility).setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
@@ -509,10 +522,37 @@ public class MainActivity extends Activity {
         if (Config.isRemindEnabled(this) && nextRemind > 0) {
             sb.append("     未打卡提醒：").append(fmt.format(new Date(nextRemind)));
         }
+        sb.append("\n保活：前台服务常驻 + 15 分钟心跳 + 最近任务")
+                .append(Config.hideFromRecents(this) ? "已隐藏（不会被一键清理划掉）" : "显示中");
         tvNextRun.setText(sb.toString());
     }
 
     // ---------------------------------------------------------------- 权限
+
+    /**
+     * 切换本应用在「最近任务」里的可见性。
+     * 隐藏后系统的一键清理/左滑划掉都碰不到这张卡片，等于不会被误杀。
+     */
+    private void applyRecentsVisibility(boolean hide) {
+        try {
+            ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            if (am == null) {
+                return;
+            }
+            for (ActivityManager.AppTask task : am.getAppTasks()) {
+                try {
+                    java.lang.reflect.Method m = task.getClass()
+                            .getMethod("setExcludeFromRecents", boolean.class);
+                    m.invoke(task, hide);
+                } catch (Throwable ignored) {
+                    // 该机型不支持运行时切换，退回 manifest 默认（隐藏）
+                }
+            }
+            Logger.log(this, "最近任务可见性：" + (hide ? "隐藏" : "显示"));
+        } catch (Throwable t) {
+            Logger.log(this, "切换最近任务可见性失败：" + t);
+        }
+    }
 
     private void requestIgnoreBattery() {
         try {

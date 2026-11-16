@@ -12,5 +12,7 @@ public class BootReceiver extends BroadcastReceiver {
         Logger.log(context, "开机/更新广播：" + (intent == null ? "-" : intent.getAction()) + "，恢复排程");
         CheckinScheduler.scheduleDaily(context);
         CheckinScheduler.scheduleReminderDaily(context);
+        KeepAliveService.start(context);
+        KeepAliveJobService.schedule(context);
     }
 }

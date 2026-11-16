@@ -56,6 +56,15 @@ public final class Config {
         return sp(c).getBoolean("enabled", true);
     }
 
+    /** 是否在「最近任务」里隐藏本应用（默认隐藏，避免一键清理把卡片划掉）。 */
+    public static boolean hideFromRecents(Context c) {
+        return sp(c).getBoolean("hideRecents", true);
+    }
+
+    public static void setHideFromRecents(Context c, boolean hide) {
+        sp(c).edit().putBoolean("hideRecents", hide).apply();
+    }
+
     public static void setEnabled(Context c, boolean enabled) {
         sp(c).edit().putBoolean("enabled", enabled).apply();
     }
