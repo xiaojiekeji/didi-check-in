@@ -33,17 +33,17 @@ public final class CheckinScheduler {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    /** 下一次触发时间：今天的目标时刻 + 0~30 分钟随机偏移，已过则顺延到明天。 */
+    /** 下一次触发时间：今天的目标时刻 + 0~60 分钟随机偏移（默认 7:00 起，落在 7:00~8:00），已过则顺延到明天。 */
     public static long nextDailyMillis(Context c) {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, Config.hour(c));
         cal.set(Calendar.MINUTE, Config.minute(c));
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-        cal.add(Calendar.MINUTE, RND.nextInt(31));
+        cal.add(Calendar.MINUTE, RND.nextInt(61));
         if (cal.getTimeInMillis() < System.currentTimeMillis() + 60_000L) {
             cal.add(Calendar.DAY_OF_YEAR, 1);
-            cal.add(Calendar.MINUTE, RND.nextInt(31));
+            cal.add(Calendar.MINUTE, RND.nextInt(61));
         }
         return cal.getTimeInMillis();
     }

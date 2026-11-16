@@ -70,7 +70,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
     /** 拉起 App 后第一帧的等待。 */
     private static final long LAUNCH_GAP_MS = 900L;
     /** 整轮上限（加了 1~2 秒人工节奏后，正常 15~25 秒，这里留足保险）。 */
-    private static final long TASK_TIMEOUT_MS = 100_000L;
+    private static final long TASK_TIMEOUT_MS = 180_000L;
     /** 单个阶段找入口的上限。 */
     private static final long STAGE_TIMEOUT_MS = 12_000L;
     private static final int MAX_CLOSE = 3;
@@ -102,6 +102,8 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private int lastTapX = -1;
     private int lastTapY = -1;
     private long lastTapAt;
+    /** 上一次尝试解锁的时间：锁屏时每 2 秒试一次，避免狂点。 */
+    private long lastUnlockTryAt;
 
     private String pkg;
     private String sourceLabel = "";
@@ -223,7 +225,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
         @Override
         public void run() {
             if (busy) {
-                finish(R_FAIL, "整体执行超时（70 秒），请查看截图与日志");
+                finish(R_FAIL, "整体执行超时（180 秒），请查看截图与日志");
             }
         }
     };
@@ -448,6 +450,22 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private void step(List<ScreenOcr.Word> words) {
         long now = System.currentTimeMillis();
         nextDelay = RETRY_MS;
+
+        // -1) 手机还锁着屏：先尝试用无障碍点数字键输入密码解锁，解不开就提醒用户手动解锁
+        if (isKeyguardLocked()) {
+            if (System.currentTimeMillis() - lastUnlockTryAt > 2000L) {
+                lastUnlockTryAt = System.currentTimeMillis();
+                Logger.log(this, "屏幕锁屏中，尝试自动解锁…");
+                tryUnlockKeyguard();
+                if (isKeyguardLocked()) {
+                    Notifier.notify(this, Notifier.ID_FAIL, "需要解锁手机",
+                            "自动签到现在被锁屏挡住了，请解锁手机，解锁后会自动继续。");
+                    Logger.log(this, "自动解锁未成功，等待手动解锁（解锁后自动继续）");
+                }
+            }
+            nextDelay = 1200L;
+            return;
+        }
 
         // 0) 系统「应用启动」确认框最优先：这个框不处理，整轮就白跑（而且绝不能点到「取消」）
         if (tryLaunchDialog(words)) {
@@ -1018,10 +1036,121 @@ public class CheckinAccessibilityService extends AccessibilityService {
             wakeLock.acquire(TASK_TIMEOUT_MS);
             KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
             if (km != null && km.isKeyguardLocked()) {
-                Logger.log(this, "屏幕处于锁屏状态，若设置了密码锁可能无法自动操作");
+                Logger.log(this, "屏幕处于锁屏状态，开始尝试自动解锁（密码 " + maskPin(Config.pin(this)) + "）");
             }
         } catch (Exception e) {
             Logger.log(this, "唤醒屏幕失败：" + e);
+        }
+    }
+
+    private String maskPin(String pin) {
+        if (pin == null || pin.isEmpty()) {
+            return "未设置";
+        }
+        return pin.substring(0, 1) + "****" + pin.substring(pin.length() - 1);
+    }
+
+    private boolean isKeyguardLocked() {
+        try {
+            KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+            return km != null && km.isKeyguardLocked();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * 锁屏解锁：靠无障碍点锁屏数字键盘，把 PIN 一位位点进去，
+     * 再点「确定 / ✓ / 解锁」。系统若禁止无障碍操作安全锁屏，就会失败，退回到「等用户手动解锁」。
+     */
+    private void tryUnlockKeyguard() {
+        String pin = Config.pin(this);
+        if (pin == null || pin.isEmpty()) {
+            return;
+        }
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) {
+            return;
+        }
+        // 1) 一位一位点数字键
+        for (char ch : pin.toCharArray()) {
+            AccessibilityNodeInfo key = findKeyByDigit(root, ch);
+            if (key == null) {
+                Logger.log(this, "锁屏键盘上找不到数字「" + ch + "」，改为等待手动解锁");
+                return;
+            }
+            if (!performClick(key)) {
+                Logger.log(this, "锁屏键盘点击被系统拒绝（安全锁屏），改为等待手动解锁");
+                return;
+            }
+            sleepQuietly(120L);
+        }
+        // 2) 点确认（有的机型输满自动解锁，没有确认键就算了）
+        AccessibilityNodeInfo ok = findUnlockConfirm(root);
+        if (ok != null) {
+            performClick(ok);
+            sleepQuietly(200L);
+        }
+        Logger.log(this, "已尝试输入锁屏密码");
+    }
+
+    private AccessibilityNodeInfo findKeyByDigit(AccessibilityNodeInfo root, char digit) {
+        String d = String.valueOf(digit);
+        List<AccessibilityNodeInfo> nodes = new ArrayList<>();
+        collect(root, nodes, 0);
+        for (AccessibilityNodeInfo n : nodes) {
+            CharSequence t = n.getText();
+            CharSequence desc = n.getContentDescription();
+            if ((t != null && d.contentEquals(t)) || (desc != null && d.contentEquals(desc))) {
+                return n;
+            }
+        }
+        return null;
+    }
+
+    private AccessibilityNodeInfo findUnlockConfirm(AccessibilityNodeInfo root) {
+        List<AccessibilityNodeInfo> nodes = new ArrayList<>();
+        collect(root, nodes, 0);
+        String[] words = {"确定", "确认", "解锁", "OK", "ok", "✓", "✔", "回车"};
+        for (AccessibilityNodeInfo n : nodes) {
+            CharSequence t = n.getText();
+            CharSequence desc = n.getContentDescription();
+            for (String w : words) {
+                if ((t != null && t.toString().contains(w)) || (desc != null && desc.toString().contains(w))) {
+                    return n;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void collect(AccessibilityNodeInfo node, List<AccessibilityNodeInfo> out, int depth) {
+        if (node == null || depth > 24 || out.size() > 600) {
+            return;
+        }
+        out.add(node);
+        for (int i = 0; i < node.getChildCount(); i++) {
+            collect(node.getChild(i), out, depth + 1);
+        }
+    }
+
+    /** 点节点：优先点自己，点不动就往上找可点的父节点。 */
+    private boolean performClick(AccessibilityNodeInfo node) {
+        AccessibilityNodeInfo cur = node;
+        for (int i = 0; i < 4 && cur != null; i++) {
+            if (cur.isClickable()) {
+                return cur.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+            cur = cur.getParent();
+        }
+        return node != null && node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+    }
+
+    private void sleepQuietly(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
         }
     }
 

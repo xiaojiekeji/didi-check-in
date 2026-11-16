@@ -7,9 +7,12 @@ import android.content.SharedPreferences;
 public final class Config {
 
     private static final String SP = "checkin_cfg";
-    public static final int DEF_HOUR = 8;
-    public static final int DEF_MINUTE = 30;
+    /** 每日执行时刻：7:30 + 0~30 分钟随机偏移，实际落在 7:00~8:00 之间。 */
+    public static final int DEF_HOUR = 7;
+    public static final int DEF_MINUTE = 0;
     public static final String DEF_PACKAGE = "com.sdu.didi.psnger";
+    /** 锁屏解锁密码（原样输入，仅存本机）。 */
+    public static final String DEF_PIN = "688888";
 
     private Config() {
     }
@@ -33,6 +36,16 @@ public final class Config {
     public static String targetPackage(Context c) {
         String v = sp(c).getString("pkg", DEF_PACKAGE);
         return (v == null || v.trim().isEmpty()) ? DEF_PACKAGE : v.trim();
+    }
+
+    /** 锁屏密码：用于锁屏时自动输入（只在有密码锁的机器上生效）。 */
+    public static String pin(Context c) {
+        String v = sp(c).getString("pin", DEF_PIN);
+        return v == null ? DEF_PIN : v;
+    }
+
+    public static void setPin(Context c, String pin) {
+        sp(c).edit().putString("pin", pin == null ? "" : pin).apply();
     }
 
     public static void setTargetPackage(Context c, String pkg) {

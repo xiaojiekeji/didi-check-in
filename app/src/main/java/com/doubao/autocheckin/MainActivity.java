@@ -580,7 +580,7 @@ public class MainActivity extends Activity {
         CheckinScheduler.scheduleReminderDaily(this);
 
         Logger.log(this, String.format(Locale.CHINA,
-                "配置已保存：%02d:%02d 起（随机+0~30 分钟），包名 %s，自动签到 %s，未打卡提醒 %02d:%02d（%s）",
+                "配置已保存：%02d:%02d 起（随机+0~60 分钟），包名 %s，自动签到 %s，未打卡提醒 %02d:%02d（%s）",
                 hour, minute, pkgText, cbEnabled.isChecked() ? "开" : "关",
                 rHour, rMinute, cbRemind.isChecked() ? "开" : "关"));
         toast("已保存并重新排程");
