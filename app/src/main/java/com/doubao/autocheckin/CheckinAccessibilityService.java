@@ -1097,7 +1097,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
     private AccessibilityNodeInfo findKeyByDigit(AccessibilityNodeInfo root, char digit) {
         String d = String.valueOf(digit);
         List<AccessibilityNodeInfo> nodes = new ArrayList<>();
-        collect(root, nodes, 0);
+        collectNodes(root, nodes, 0);
         for (AccessibilityNodeInfo n : nodes) {
             CharSequence t = n.getText();
             CharSequence desc = n.getContentDescription();
@@ -1110,7 +1110,7 @@ public class CheckinAccessibilityService extends AccessibilityService {
 
     private AccessibilityNodeInfo findUnlockConfirm(AccessibilityNodeInfo root) {
         List<AccessibilityNodeInfo> nodes = new ArrayList<>();
-        collect(root, nodes, 0);
+        collectNodes(root, nodes, 0);
         String[] words = {"确定", "确认", "解锁", "OK", "ok", "✓", "✔", "回车"};
         for (AccessibilityNodeInfo n : nodes) {
             CharSequence t = n.getText();
@@ -1124,13 +1124,13 @@ public class CheckinAccessibilityService extends AccessibilityService {
         return null;
     }
 
-    private void collect(AccessibilityNodeInfo node, List<AccessibilityNodeInfo> out, int depth) {
+    private void collectNodes(AccessibilityNodeInfo node, List<AccessibilityNodeInfo> out, int depth) {
         if (node == null || depth > 24 || out.size() > 600) {
             return;
         }
         out.add(node);
         for (int i = 0; i < node.getChildCount(); i++) {
-            collect(node.getChild(i), out, depth + 1);
+            collectNodes(node.getChild(i), out, depth + 1);
         }
     }
 
