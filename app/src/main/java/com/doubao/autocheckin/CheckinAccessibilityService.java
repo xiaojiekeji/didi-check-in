@@ -1116,10 +1116,12 @@ public class CheckinAccessibilityService extends AccessibilityService {
             int w = getResources().getDisplayMetrics().widthPixels;
             int h = getResources().getDisplayMetrics().heightPixels;
             Path p = new Path();
-            p.moveTo(w * 0.5f, h * 0.72f);
-            p.lineTo(w * 0.5f, h * 0.36f);
+            // 起点不能太靠下：会员中心底部有固定的「立即续费」浮层，从 0.72H 起手会被浮层吃掉手势，
+            // 页面一点都不会动。这里从 0.60H 划到 0.24H，绕开浮层。
+            p.moveTo(w * 0.5f, h * 0.60f);
+            p.lineTo(w * 0.5f, h * 0.24f);
             GestureDescription.StrokeDescription stroke =
-                    new GestureDescription.StrokeDescription(p, 0, 360);
+                    new GestureDescription.StrokeDescription(p, 0, 500);
             dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
             long gap = humanDelay();
             Logger.log(this, what + "，等 " + gap + "ms");
