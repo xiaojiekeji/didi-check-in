@@ -10,8 +10,20 @@ android {
         applicationId "com.doubao.autocheckin"
         minSdk 26
         targetSdk 34
-        versionCode 12
-        versionName "1.5.2"
+        versionCode 13
+        versionName "1.5.3"
+    }
+
+    // 固定签名：所有构建（debug/release）都用仓库内同一把 keystore，
+    // 因此新版本可以直接覆盖安装，不需要卸载，打卡记录不会丢。
+    signingConfigs {
+        didi {
+            storeFile file("../keystore/didi-check-in.p12")
+            storeType "PKCS12"
+            storePassword project.findProperty("DIDI_STORE_PASSWORD") ?: "didi2026checkin"
+            keyAlias project.findProperty("DIDI_KEY_ALIAS") ?: "didi"
+            keyPassword project.findProperty("DIDI_KEY_PASSWORD") ?: "didi2026checkin"
+        }
     }
 
     compileOptions {
@@ -22,9 +34,11 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
+            signingConfig signingConfigs.didi
         }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.didi
         }
     }
 

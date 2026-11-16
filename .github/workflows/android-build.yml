@@ -75,6 +75,19 @@ jobs:
       - name: Show APK info
         run: ls -lh app/build/outputs/apk/debug/
 
+      - name: Verify signing certificate (fixed keystore)
+        run: |
+          APKSIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -n 1)"
+          APK="$(ls app/build/outputs/apk/debug/*.apk | head -n 1)"
+          echo "apk=$APK"
+          "$APKSIGNER" verify --print-certs "$APK" | tee cert.txt
+          {
+            echo "### APK 签名证书指纹"
+            echo '```text'
+            grep -E "SHA-256 digest|SHA-1 digest|Signer #1 certificate DN" cert.txt || cat cert.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

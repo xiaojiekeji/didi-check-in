@@ -5,6 +5,24 @@
 > 说明：本工程基于无障碍服务（AccessibilityService）模拟点击实现，属于对平台规则的灰区操作。
 > 建议先用小号试运行 1~2 周，一天只跑一次，遇到验证码/滑块立即停手，不要做破解。
 
+## 签名与覆盖安装（v1.5.3 起）
+
+以前每次 GitHub Actions 构建都会现生成一把临时 debug key，签名每次不同 → 装新版本必须卸载旧版本（打卡记录、日志全丢）。
+
+现在改为**仓库内固定签名**：
+
+- keystore：`keystore/didi-check-in.p12`（PKCS12，别名 `didi`，密码 `didi2026checkin`，随仓库一起走，CI 每次都用它）
+- `app/build.gradle` 里 `signingConfigs.didi` 同时挂在 `debug` 和 `release` 两个 buildType 上
+- 证书 SHA-256：`58:3E:D8:A6:47:8F:DC:A3:BE:49:76:06:65:1B:EF:4D:67:11:EC:EA:BE:97:93:29:8A:71:FC:EB:52:00:E4:2C`
+- CI 每次构建后会跑 `apksigner verify --print-certs`，把签名指纹打到 job summary 里，可自行核对是否一致
+
+结果：从 v1.5.3 起的新包都可以**直接覆盖安装**（`adb install -r`），不需要先卸载。
+
+> 唯一例外：从旧版本（随机签名的包）升级到 v1.5.3，必须**最后卸载一次**，因为签名对不上，系统会拒绝安装。卸载后打卡记录会清空，这一步只需要做一次。
+>
+> 注意：keystore 是跟着公开仓库走的，等于公开的签名密钥（性质接近当年 AOSP 那个公共 debug key）。风险是有人能做出同签名 APK 覆盖安装你的应用；如果介意，可把 keystore 换成 GitHub Actions Secret 存放，但那样 CI 需要额外配置。
+
+
 ## 功能
 
 - 每天早上 **7:00~8:00** 之间自动触发（基准 07:00 + 0~60 分钟随机偏移），避开机械的整点特征
