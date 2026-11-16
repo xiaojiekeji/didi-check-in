@@ -141,3 +141,19 @@ gradle :app:assembleDebug      # 产物 app/build/outputs/apk/debug/app-debug.ap
 - 系统「应用启动」确认框（"想要打开滴滴"）优先处理，点「始终打开」，绝不再点「取消」
 - 会员中心底部有固定「立即续费」浮层，下滑手势起点必须避开（从 0.60H 起手，划到 0.24H）
 - 识别到自己 App 的界面文字（今日打卡、去开启无障碍服务…）一律不点
+## 保活（v1.5.2 起）
+
+安卓会周期性清理后台，这里做了四层加固：
+
+| 层 | 做法 | 作用 |
+|---|---|---|
+| 最近任务隐藏 | `MainActivity` 加 `android:excludeFromRecents="true"`，应用内也可勾选切换 | 「最近任务」里不出现卡片，系统一键清理/左滑都碰不到它，等于卡片被"锁"住 |
+| 前台常驻服务 | `KeepAliveService`，`IMPORTANCE_MIN` 常驻通知 + `START_STICKY` + `stopWithTask=false` | 进程优先级提到最高档，最不容易被回收 |
+| 被划掉自动重启 | `onTaskRemoved` → 5 秒后广播 `KeepAliveReceiver` 重新拉起 | 万一卡片还是被划掉，5 秒内自己回来 |
+| 15 分钟心跳 | `KeepAliveJobService`（`setPeriodic(15min)` + `setPersisted(true)`） | 进程被杀后由系统定期拉起，并补齐每日闹钟与提醒 |
+
+补充说明：
+
+- 第三方 App **没有系统 API 能"锁定"最近任务卡片**（那是各厂商 ROM 的私有功能）。本方案的做法是**直接隐藏卡片**——卡片不存在，就不会被一键清理划掉，效果比锁定更彻底。
+- 想改回"显示卡片自己手动锁定"：在应用首页取消勾选「在最近任务卡片中隐藏」，然后长按卡片点厂商的锁图标。
+- 各厂商（MIUI / 澎湃 / ColorOS / OriginOS / 鸿蒙）还需要在系统设置里允许 **自启动 + 后台无限制**，否则以上都白搭。
