@@ -1,8 +1,8 @@
 {
-  "versionCode": 75,
-  "versionName": "2.1.5",
-  "size": 47083988,
-  "sha256": "527c8e35fe87f250f84be96ffac7cd466269fd7e13ed3868e0daa74429baa506",
-  "url": "https://aka.doubaocdn.com/s/CU6VbhxuJe",
-  "note": "底栏换成 12123 v1.5.2 同款实时磨砂玻璃（8dp 高斯+提亮增饱和、80dp 高/14dp 边距/34dp 圆角、四层玻璃叠加），磨砂层自裁圆角，彻底去掉四个圆角外的色块"
+  "versionCode": 77,
+  "versionName": "2.1.7",
+  "size": 47083984,
+  "sha256": "fe3a920b7a5e734944fa6a5919df6cd9e0d5ad11d7e94d12c52a02f10100f209",
+  "url": "https://aka.doubaocdn.com/s/P0fdrLw2kz",
+  "note": "底栏按 12123sms 源码原样：圆角矩形（80dp 高/左右 14dp/底 14dp/34dp 圆角）+ 四层玻璃 + 实时磨砂；磨砂层改用 BitmapShader 圆角贴图，左上右上不再有矩形色块；内容底部留白改为 16dp，底栏下方露出少量内容"
 }
