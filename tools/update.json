@@ -1,8 +1,8 @@
 {
-  "versionCode": 37,
-  "versionName": "1.7.7",
+  "versionCode": 38,
+  "versionName": "1.7.8",
   "size": 47058171,
-  "sha256": "184af9e125c0bfdd12f386bdcc7822da61194b6b40b93163f913041733f7edd3",
-  "url": "https://aka.doubaocdn.com/s/yKF8UPymph",
-  "note": "修正签到天数识别：只认「已签到/已领取」格子对应的第N天，并取其中最大值（待签到格子不计入），不再把它后面的待签天数也读进来"
+  "sha256": "ef9262b8719664da5b99fffa40f110fde6407816ba97093781399f8df9ced57a",
+  "url": "https://aka.doubaocdn.com/s/qeTBVBsP7Q",
+  "note": "修正签到天数识别：优先读「已连续签到N天」文案，其次按五格圆点深浅判定，彻底移除「已签到」按钮与格子的坐标配对"
 }
