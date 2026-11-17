@@ -1,8 +1,8 @@
 {
-  "versionCode": 46,
-  "versionName": "1.8.6",
+  "versionCode": 47,
+  "versionName": "1.8.7",
   "size": 47062407,
-  "sha256": "96b4acb57815ede99cfe7e48c26facbf2ffadfa35a189f8ebf719bd1481f0ba5",
-  "url": "https://aka.doubaocdn.com/s/We5KzEuwkB",
-  "note": "每次开跑前先用 root 结束滴滴进程再冷启动，避免停在上次残留页面；签到中遇到弹窗/广告先识别关闭再继续；页面跑偏或长时间无变化自动按返回退回，仍不动就重拉滴滴回主线。点手动签到会先自动补权限（含无障碍）"
+  "sha256": "a728774265958cd66aaae7947eb16f2d0e29166023e6d9b7895b6746fabf0c2c",
+  "url": "https://aka.doubaocdn.com/s/c63YDU6WBQ",
+  "note": "修正会员中心签到定位：改为一进页面就向下拖、把顶部签到日历拖出来（上滑会滑到续费套餐区）；只有认出「第N天」格子才按格子下方兜底点击，认不出不乱点；开屏广告自动点「跳过」。"
 }
