@@ -104,13 +104,30 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Dump build error to repo (readable without login)
+        if: failure()
+        run: |
+          set +e
+          {
+            grep -n -E "error:|FAILURE|What went wrong|Execution failed|Caused by|Could not|Unsupported|e: " build.log 2>/dev/null | head -n 80
+            echo "----- log tail 150 -----"
+            tail -n 150 build.log 2>/dev/null
+          } > /tmp/err.txt
+          cp /tmp/err.txt tools/last-build-error.txt
+          git config user.email "ci@local"
+          git config user.name "ci-bot"
+          git add tools/last-build-error.txt
+          git commit -m "ci: build error dump [skip ci]"
+          git push
+          exit 1
+
       - name: Show APK info
         run: ls -lh app/build/outputs/apk/debug/
 
       - name: Verify signing certificate (fixed keystore)
         run: |
           APKSIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -n 1)"
-          APK="$(ls app/build/outputs/apk/debug/*.apk | head -n 1)"
+          APK="$(ls app/build/outputs/apk/debug/*.apk | head -1)"
           echo "apk=$APK"
           "$APKSIGNER" verify --print-certs "$APK" | tee cert.txt
           {
@@ -141,11 +158,4 @@ jobs:
           name: ${{ env.RELEASE_TAG }}
           body: |
             自动构建产物（固定签名，可直接覆盖安装）。
-            - 控件树快路径：能认到目标就直接点，不再每步截图 + OCR；
-            - 车主页：先点「车主服务」子分类再点「滴滴充电」；
-            - 「我的 → 会员中心」只认整词，不再误点；
-            - 页面识别收紧：滴滴出行首页的底栏不再被当成充电「我的」页（v1.5.8 真机实测会反复点底栏、页面不动）；
-            - 签到区只看上半屏，只下滑一次让开「立即续费」浮层；
-            - root 改用 su 绝对路径探测；
-            - 全屏 H5 浮层（充电好礼 / 100 元礼包）改为按返回键关闭。
           files: app/build/outputs/apk/debug/*.apk
