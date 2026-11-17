@@ -1,8 +1,8 @@
 {
-  "versionCode": 63,
-  "versionName": "2.0.3",
+  "versionCode": 64,
+  "versionName": "2.0.4",
   "size": 47077280,
-  "sha256": "0dd55464b9f254e0a7cfbdba7b3a5582955b30f840a59bd6ed68c543928389ef",
-  "url": "https://aka.doubaocdn.com/s/3xrqQuChZ3",
-  "note": "恢复「以文字判定」：截图文字读到「已签到」且签到按钮消失、仍在签到页 → 判定签到成功；首页「每天自动唤醒、解锁、签到…」文案已删除；记录缩略图改为签到进度卡片裁切版；大标题不加粗、状态栏融底色。"
+  "sha256": "ef1f6a4f4f98beae20749021cd2b7a897c20ff736c1d3d53a5935b6ae76c7f59",
+  "url": "https://aka.doubaocdn.com/s/W0RUMbk29M",
+  "note": "截图前把签到卡片顶到屏幕上部再裁剪，记录页缩略图与签到页一致"
 }
