@@ -1,8 +1,8 @@
 {
-  "versionCode": 44,
-  "versionName": "1.8.4",
-  "size": 47062271,
-  "sha256": "821c7289d3bb7e39dda597655d8bf4c0ae8eec45ab8cfb548baed16814f21044",
-  "url": "https://aka.doubaocdn.com/s/nMqVRje6aL",
-  "note": "点击「手动执行签到」时用 root 自动补齐无障碍/通知/电池/精确闹钟，不再弹「无障碍服务未开启」；执行中按钮变「停止」，停止后静默无弹窗并立即恢复；三页大标题取消加粗、放大到 28sp"
+  "versionCode": 45,
+  "versionName": "1.8.5",
+  "size": 47062407,
+  "sha256": "7a1a467529eef61ef27aa24a6603b9978771028389043b182d712fc0c5a8366c",
+  "url": "https://aka.doubaocdn.com/s/qo9qYcfL0Y",
+  "note": "签到遇到步骤外弹窗/广告会先识别并关掉再继续；页面跑偏或连续十几次不再变化时自动按返回退回，连退两页仍不动就重新拉起滴滴回到主线。主页按钮「手动执行签到」，执行中变「停止」，停止静默不弹窗；点手动签到会先用 root 把无障碍等权限补齐再跑"
 }
