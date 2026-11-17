@@ -1,8 +1,8 @@
 {
-  "versionCode": 49,
-  "versionName": "1.8.9",
+  "versionCode": 50,
+  "versionName": "1.9.0",
   "size": 47062407,
-  "sha256": "f5c16c1fa53eef6782287b8d47f4a842beeedc3bdec987794fec75f1d4680c48",
-  "url": "https://aka.doubaocdn.com/s/UicEaPkU6W",
-  "note": "按真机实测把「立即签到」兜底坐标定在 (0.501W, 0.501H)（滑动 2 次下滑 + 1 次小幅上滑后按钮正中），OCR 认不出也能点到；开屏广告自动点跳过。"
+  "sha256": "9e278ece2096261fe52a8867fe83a06270a0d740cf97225d176ccc916300532d",
+  "url": "https://aka.doubaocdn.com/s/TK2rQAoVsV",
+  "note": "检测升级时如果已是最新版，不再弹对话框，只给一句轻提示，避免挡住主页；真机已验收签到流程（两次均 20 秒内成功，天数识别第 2 天与页面一致）。"
 }
