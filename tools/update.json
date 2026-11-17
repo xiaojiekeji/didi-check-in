@@ -1,8 +1,8 @@
 {
-  "versionCode": 40,
-  "versionName": "1.8.0",
-  "size": 47058171,
-  "sha256": "dd73ae5d29a5679bc14608bfd05599402afa2f75e32fc4570cf4de267ad03713",
-  "url": "https://aka.doubaocdn.com/s/YFAzfo0niF",
-  "note": "修复「立即签到」上滑次数不足（最多上滑4次）与兜底点击坐标按「第N天」格子推算；主页「今天已打卡成功」时间改为取当天最近一次"
+  "versionCode": 42,
+  "versionName": "1.8.2",
+  "size": 47062271,
+  "sha256": "db0165a11d961101b1b3bfbe55f637070e096962257961bf65326b5d17064443",
+  "url": "https://aka.doubaocdn.com/s/0CltiVMdVf",
+  "note": "顶部大标题取消加粗、字号放大15%；主页主按钮改为「手动执行签到」↔「停止」（点了立刻中止本次签到，记录里显示已停止）；启动时自检并用 root 自动补齐权限，无障碍被关掉也会自动重开"
 }
