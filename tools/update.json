@@ -1,8 +1,8 @@
 {
-  "versionCode": 56,
-  "versionName": "1.9.6",
-  "size": 47066503,
-  "sha256": "e4fd2768b13ce6186c203570fb862449f45f561d4ab55647cc3d7153019f111f",
-  "url": "https://aka.doubaocdn.com/s/jSh6ttUxcL",
-  "note": "首页与记录页的已签到天数统一对齐，一律以滴滴签到页面显示的天数为准（OCR「已连续签到 N 天」）。"
+  "versionCode": 57,
+  "versionName": "1.9.7",
+  "size": 47073148,
+  "sha256": "585f0ce3ca80ad28615537bec8615a99d721c4b33c49557c69aac1a9627c3191",
+  "url": "https://aka.doubaocdn.com/s/atdVkeVIeL",
+  "note": "UI 改为 iOS 风格：大标题 + 浅蓝状态大卡（圆形勾徽章 + 2×2 权限网格）+ 白卡圆角 + 蓝色胶囊按钮 + 浮岛式底栏胶囊。功能与签到逻辑未变。"
 }
