@@ -10,8 +10,8 @@ android {
         applicationId "com.doubao.autocheckin"
         minSdk 26
         targetSdk 34
-        versionCode 13
-        versionName "1.5.3"
+        versionCode 14
+        versionName "1.5.4"
     }
 
     // 固定签名：所有构建（debug/release）都用仓库内同一把 keystore，
