@@ -1,8 +1,8 @@
 {
-  "versionCode": 79,
-  "versionName": "2.1.9",
-  "size": 47088112,
-  "sha256": "d537028ed70a66bca82cd5335e7bb02adf47fdde84d040558e930718fd9735d8",
-  "url": "https://aka.doubaocdn.com/s/UG3Bq5YBl7",
-  "note": "修复底栏四角残留矩形色块：磨砂层不再给自身设 RenderEffect（GPU 模糊会越过 View 边界向外扩散，父容器裁不到），改为内容缩采 1/6 画进离屏 Bitmap 再平滑放大，最后 BitmapShader 贴圆角，圆角外零像素；底栏容器换成 RoundedFrameLayout，dispatchDraw 里 clipPath 圆角兼底裁剪 + 34dp 圆角 outline。"
+  "versionCode": 80,
+  "versionName": "2.1.10",
+  "size": 47092116,
+  "sha256": "ec955f575406ef5d15a89d1bd89d075773440a1fdd78a72b2404a4bc026cbc56",
+  "url": "https://aka.doubaocdn.com/s/KuFsblw8p8",
+  "note": "底栏直接套用 12123sms 原始源码：BlurBackdropView 逐行照搬（RenderEffect 8dp 高斯 + 提亮增饱和，画 ScrollView 内容子控件并自己补 scroll 位移）；底栏容器改回 FrameLayout(80dp/左右与底部 14dp/clipToOutline) + 34dp 圆角 outline；根布局改 FrameLayout，内容铺满整屏、底栏作为浮岛覆盖在内容之上——玻璃下面不再是空背景，底栏左右与下方露出的是真实页面内容。去掉了自制的低采样模糊与圆角裁剪容器。"
 }
