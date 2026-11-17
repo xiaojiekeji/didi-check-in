@@ -1,8 +1,8 @@
 {
-  "versionCode": 48,
-  "versionName": "1.8.8",
+  "versionCode": 49,
+  "versionName": "1.8.9",
   "size": 47062407,
-  "sha256": "eba3233244de39d01f4e53754af3b9b959ee534bf6eba61e1293425871ad5f85",
-  "url": "https://aka.doubaocdn.com/s/v4q82zHXvJ",
-  "note": "进会员中心后先下滑 2 次回顶、再小幅上滑 1 次把签到卡片从「立即续费」浮层后面顶出来；仍认不出就点签到卡片入口再识别一轮；开屏广告自动点「跳过」。"
+  "sha256": "f5c16c1fa53eef6782287b8d47f4a842beeedc3bdec987794fec75f1d4680c48",
+  "url": "https://aka.doubaocdn.com/s/UicEaPkU6W",
+  "note": "按真机实测把「立即签到」兜底坐标定在 (0.501W, 0.501H)（滑动 2 次下滑 + 1 次小幅上滑后按钮正中），OCR 认不出也能点到；开屏广告自动点跳过。"
 }
