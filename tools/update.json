@@ -1,8 +1,8 @@
 {
-  "versionCode": 36,
-  "versionName": "1.7.6",
-  "size": 47058175,
-  "sha256": "884e86e3bec0562fe0aca6d6cb3b9bb5269a80e39a98d3bf020a76054c968b52",
-  "url": "https://aka.doubaocdn.com/s/NHG2xVm9er",
-  "note": "签到天数改为以签到页回显为准：签完立即对签到页截图做 OCR，识别「第N天 / 已签到」并把结果落盘，主页「还需签到 N 天」与记录页「第N天」徒标都用页面识别值；识别不到才退回本地记录推算"
+  "versionCode": 37,
+  "versionName": "1.7.7",
+  "size": 47058171,
+  "sha256": "184af9e125c0bfdd12f386bdcc7822da61194b6b40b93163f913041733f7edd3",
+  "url": "https://aka.doubaocdn.com/s/yKF8UPymph",
+  "note": "修正签到天数识别：只认「已签到/已领取」格子对应的第N天，并取其中最大值（待签到格子不计入），不再把它后面的待签天数也读进来"
 }
