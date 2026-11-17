@@ -1,8 +1,8 @@
 {
-  "versionCode": 77,
-  "versionName": "2.1.7",
-  "size": 47083984,
-  "sha256": "fe3a920b7a5e734944fa6a5919df6cd9e0d5ad11d7e94d12c52a02f10100f209",
-  "url": "https://aka.doubaocdn.com/s/P0fdrLw2kz",
-  "note": "底栏按 12123sms 源码原样：圆角矩形（80dp 高/左右 14dp/底 14dp/34dp 圆角）+ 四层玻璃 + 实时磨砂；磨砂层改用 BitmapShader 圆角贴图，左上右上不再有矩形色块；内容底部留白改为 16dp，底栏下方露出少量内容"
+  "versionCode": 78,
+  "versionName": "2.1.8",
+  "size": 47088096,
+  "sha256": "ef9fbe32efcc6c9bab91092142a22afcbf8f7d0dbc4ff7e71ad7f3cfdd4b0e1e",
+  "url": "https://aka.doubaocdn.com/s/1wdglYl0Pr",
+  "note": "设置页「版本更新」卡按 12123sms 复刻：当前版本 + 状态行（正在检查…／发现新版本 x／已是最新版本（x）／正在下载 x…（n%）／下载完成，正在调起系统安装器…／检查失败：原因）+「检查升级」按钮；点检测弹出「发现新版本」弹窗（当前版本 → 新版本 + 版本说明），点「立即升级」走国内 CDN 直链下载（不需要 VPN），带百分比进度并直接拉起系统安装器；未授权安装未知应用时给出提示并跳到授权页。以后所有版本均可在线检测升级安装。"
 }
