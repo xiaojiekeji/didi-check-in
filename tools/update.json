@@ -1,8 +1,8 @@
 {
-  "versionCode": 55,
-  "versionName": "1.9.5",
+  "versionCode": 56,
+  "versionName": "1.9.6",
   "size": 47066503,
-  "sha256": "2fdd27280c5b021882b680d175f99407739b4f7231d8fcdfa19279775b9f4e85",
-  "url": "https://aka.doubaocdn.com/s/p6hXaSMgWo",
-  "note": "连续签到天数改为以滴滴签到页面为准：记录卡片显示的天数按最近一次 OCR 到的「已连续签到 N 天」回推，不再按本地记录累加导致少一天。"
+  "sha256": "e4fd2768b13ce6186c203570fb862449f45f561d4ab55647cc3d7153019f111f",
+  "url": "https://aka.doubaocdn.com/s/jSh6ttUxcL",
+  "note": "首页与记录页的已签到天数统一对齐，一律以滴滴签到页面显示的天数为准（OCR「已连续签到 N 天」）。"
 }
