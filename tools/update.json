@@ -1,8 +1,8 @@
 {
-  "versionCode": 78,
-  "versionName": "2.1.8",
-  "size": 47088096,
-  "sha256": "ef9fbe32efcc6c9bab91092142a22afcbf8f7d0dbc4ff7e71ad7f3cfdd4b0e1e",
-  "url": "https://aka.doubaocdn.com/s/1wdglYl0Pr",
-  "note": "设置页「版本更新」卡按 12123sms 复刻：当前版本 + 状态行（正在检查…／发现新版本 x／已是最新版本（x）／正在下载 x…（n%）／下载完成，正在调起系统安装器…／检查失败：原因）+「检查升级」按钮；点检测弹出「发现新版本」弹窗（当前版本 → 新版本 + 版本说明），点「立即升级」走国内 CDN 直链下载（不需要 VPN），带百分比进度并直接拉起系统安装器；未授权安装未知应用时给出提示并跳到授权页。以后所有版本均可在线检测升级安装。"
+  "versionCode": 79,
+  "versionName": "2.1.9",
+  "size": 47088112,
+  "sha256": "d537028ed70a66bca82cd5335e7bb02adf47fdde84d040558e930718fd9735d8",
+  "url": "https://aka.doubaocdn.com/s/UG3Bq5YBl7",
+  "note": "修复底栏四角残留矩形色块：磨砂层不再给自身设 RenderEffect（GPU 模糊会越过 View 边界向外扩散，父容器裁不到），改为内容缩采 1/6 画进离屏 Bitmap 再平滑放大，最后 BitmapShader 贴圆角，圆角外零像素；底栏容器换成 RoundedFrameLayout，dispatchDraw 里 clipPath 圆角兼底裁剪 + 34dp 圆角 outline。"
 }
