@@ -1,8 +1,8 @@
 {
-  "versionCode": 73,
-  "versionName": "2.1.3",
-  "size": 47082932,
-  "sha256": "9caa04af84af06438dff9ff2204d4ed9552d41001ed8f84bbf2ac36c71109260",
-  "url": "https://aka.doubaocdn.com/s/p4WTzZMukn",
-  "note": "去掉「今日签到」卡片里的 root 权限按钮；修复打开 App 时整页发灰（点击后才恢复）；底栏浮岛四角灰色阴影去掉，保留 iOS 玻璃质感"
+  "versionCode": 75,
+  "versionName": "2.1.5",
+  "size": 47083988,
+  "sha256": "527c8e35fe87f250f84be96ffac7cd466269fd7e13ed3868e0daa74429baa506",
+  "url": "https://aka.doubaocdn.com/s/CU6VbhxuJe",
+  "note": "底栏换成 12123 v1.5.2 同款实时磨砂玻璃（8dp 高斯+提亮增饱和、80dp 高/14dp 边距/34dp 圆角、四层玻璃叠加），磨砂层自裁圆角，彻底去掉四个圆角外的色块"
 }
