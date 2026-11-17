@@ -1,8 +1,8 @@
 {
-  "versionCode": 32,
-  "versionName": "1.7.2",
-  "size": 47053305,
-  "sha256": "60ef337317bfcd41200b07903482185ba9418a67c988800e89e5188ca359e763",
-  "url": "https://aka.doubaocdn.com/s/Uc9Kdwuea7",
-  "note": "主页显示 root 权限状态，检测升级移入设置页"
+  "versionCode": 34,
+  "versionName": "1.7.4",
+  "size": 47053293,
+  "sha256": "ac40abcbb7404b1d763e98bb775a91a6162525550cafe26599abbfd642412b0e",
+  "url": "https://aka.doubaocdn.com/s/4KNEZPMY2B",
+  "note": "已授予权限卡片移入设置页；检测升级改走国内 CDN，无需 VPN"
 }
