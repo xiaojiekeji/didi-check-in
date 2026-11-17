@@ -1,4 +1,4 @@
-https://aka.doubaocdn.com/s/yhSkIyCXDY
-6f8fe7d13670fdac695edaf9892282641305542810353232bdb78672a30c3139
+https://aka.doubaocdn.com/s/a6AG3jzRzD
+ae98791d75759e996790dbc5d9a657c9b97bef9c1a97c198aed61c0c5c6a596f
 v1.8.2
-# retry: previous run failed in Build debug APK (infra)
+# fix: Runnable.this compile error
