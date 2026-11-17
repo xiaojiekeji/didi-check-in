@@ -1,8 +1,8 @@
 {
-  "versionCode": 54,
-  "versionName": "1.9.4",
+  "versionCode": 55,
+  "versionName": "1.9.5",
   "size": 47066503,
-  "sha256": "78008a5adb19be17d31e822803943daaf144b51663290756d8d31d87aa42def5",
-  "url": "https://aka.doubaocdn.com/s/T3Nf9T6pMX",
-  "note": "修好「提示签到成功但实际没点到」：滑动与点击全部改用真实屏幕尺寸（导航栏不再被漏算）；识别到「立即签到」若还在底部「立即续费」浮层后面会先再上滑把它顶出来再点；成功判定只认「已连续签到」天数 +1，不再被「已签到」字样误报。"
+  "sha256": "2fdd27280c5b021882b680d175f99407739b4f7231d8fcdfa19279775b9f4e85",
+  "url": "https://aka.doubaocdn.com/s/p6hXaSMgWo",
+  "note": "连续签到天数改为以滴滴签到页面为准：记录卡片显示的天数按最近一次 OCR 到的「已连续签到 N 天」回推，不再按本地记录累加导致少一天。"
 }
