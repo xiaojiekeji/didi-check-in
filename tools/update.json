@@ -1,8 +1,8 @@
 {
-  "versionCode": 60,
-  "versionName": "2.0.0",
-  "size": 47077364,
-  "sha256": "d2c8843b5928f5786d9a633c19c74e88d0aab744cf01666dce5745f6cbe474b9",
-  "url": "https://aka.doubaocdn.com/s/HZU1gEr5IS",
-  "note": "记录页缩略图改为「签到进度卡片」裁切版：签到成功瞬间用 OCR 定位标题/天数/已签到按钮，另存 -card.png，列表只显示这块区域，点开仍可看完整截图。"
+  "versionCode": 63,
+  "versionName": "2.0.3",
+  "size": 47077280,
+  "sha256": "0dd55464b9f254e0a7cfbdba7b3a5582955b30f840a59bd6ed68c543928389ef",
+  "url": "https://aka.doubaocdn.com/s/3xrqQuChZ3",
+  "note": "恢复「以文字判定」：截图文字读到「已签到」且签到按钮消失、仍在签到页 → 判定签到成功；首页「每天自动唤醒、解锁、签到…」文案已删除；记录缩略图改为签到进度卡片裁切版；大标题不加粗、状态栏融底色。"
 }
