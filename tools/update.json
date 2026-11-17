@@ -1,8 +1,8 @@
 {
-  "versionCode": 39,
-  "versionName": "1.7.9",
+  "versionCode": 40,
+  "versionName": "1.8.0",
   "size": 47058171,
-  "sha256": "aa9d43a448651cfbd3f777059c5703cfc1f71f9169f1927e4e282917c6f26c99",
-  "url": "https://aka.doubaocdn.com/s/jLOnFi2BOF",
-  "note": "去掉顶部黑色 ActionBar（改用 NoActionBar），页面直接顶到状态栏下方；保留 v1.7.8 的签到天数修正（文案优先 + 圆点深浅兜底）"
+  "sha256": "dd73ae5d29a5679bc14608bfd05599402afa2f75e32fc4570cf4de267ad03713",
+  "url": "https://aka.doubaocdn.com/s/YFAzfo0niF",
+  "note": "修复「立即签到」上滑次数不足（最多上滑4次）与兜底点击坐标按「第N天」格子推算；主页「今天已打卡成功」时间改为取当天最近一次"
 }
