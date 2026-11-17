@@ -1,8 +1,8 @@
 {
-  "versionCode": 38,
-  "versionName": "1.7.8",
+  "versionCode": 39,
+  "versionName": "1.7.9",
   "size": 47058171,
-  "sha256": "ef9262b8719664da5b99fffa40f110fde6407816ba97093781399f8df9ced57a",
-  "url": "https://aka.doubaocdn.com/s/qeTBVBsP7Q",
-  "note": "修正签到天数识别：优先读「已连续签到N天」文案，其次按五格圆点深浅判定，彻底移除「已签到」按钮与格子的坐标配对"
+  "sha256": "aa9d43a448651cfbd3f777059c5703cfc1f71f9169f1927e4e282917c6f26c99",
+  "url": "https://aka.doubaocdn.com/s/jLOnFi2BOF",
+  "note": "去掉顶部黑色 ActionBar（改用 NoActionBar），页面直接顶到状态栏下方；保留 v1.7.8 的签到天数修正（文案优先 + 圆点深浅兜底）"
 }
