@@ -1,8 +1,8 @@
 {
-  "versionCode": 57,
-  "versionName": "1.9.7",
-  "size": 47073148,
-  "sha256": "585f0ce3ca80ad28615537bec8615a99d721c4b33c49557c69aac1a9627c3191",
-  "url": "https://aka.doubaocdn.com/s/atdVkeVIeL",
-  "note": "UI 改为 iOS 风格：大标题 + 浅蓝状态大卡（圆形勾徽章 + 2×2 权限网格）+ 白卡圆角 + 蓝色胶囊按钮 + 浮岛式底栏胶囊。功能与签到逻辑未变。"
+  "versionCode": 59,
+  "versionName": "1.9.9",
+  "size": 47073268,
+  "sha256": "f7b10fbe75dc4f7f6b0045c8cd6177e3e6fa68275505d54cb0c89d42258297ba",
+  "url": "https://aka.doubaocdn.com/s/7ofVGWRkXO",
+  "note": "1) 三页大标题取消加粗（32sp 常规字重）；2) 状态栏/导航栏融进页面底色（不再是灰黑条）；3) 记录页卡片只显示签到进度卡片截图（标题+第1~5天+已签到），点开仍是完整截图。"
 }
