@@ -1,8 +1,8 @@
 {
-  "versionCode": 59,
-  "versionName": "1.9.9",
-  "size": 47073268,
-  "sha256": "f7b10fbe75dc4f7f6b0045c8cd6177e3e6fa68275505d54cb0c89d42258297ba",
-  "url": "https://aka.doubaocdn.com/s/7ofVGWRkXO",
-  "note": "1) 三页大标题取消加粗（32sp 常规字重）；2) 状态栏/导航栏融进页面底色（不再是灰黑条）；3) 记录页卡片只显示签到进度卡片截图（标题+第1~5天+已签到），点开仍是完整截图。"
+  "versionCode": 60,
+  "versionName": "2.0.0",
+  "size": 47077364,
+  "sha256": "d2c8843b5928f5786d9a633c19c74e88d0aab744cf01666dce5745f6cbe474b9",
+  "url": "https://aka.doubaocdn.com/s/HZU1gEr5IS",
+  "note": "记录页缩略图改为「签到进度卡片」裁切版：签到成功瞬间用 OCR 定位标题/天数/已签到按钮，另存 -card.png，列表只显示这块区域，点开仍可看完整截图。"
 }
