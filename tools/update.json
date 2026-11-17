@@ -1,8 +1,8 @@
 {
-  "versionCode": 67,
-  "versionName": "2.0.7",
-  "size": 47077280,
-  "sha256": "1254c6d47e3649238a705f922b42e7d9e8e7d486a07197a2ebb4939a078de270",
-  "url": "https://aka.doubaocdn.com/s/ci1hxFG2hS",
-  "note": "记录页只显示与签到页一致的卡片截图（截图前自动把签到卡滚到可视区）"
+  "versionCode": 70,
+  "versionName": "2.1.0",
+  "size": 47081388,
+  "sha256": "d1a5d52e66d57a08096f07fa72b1e846bd0187e4041fbf89f025323fa8ebd9ca",
+  "url": "https://aka.doubaocdn.com/s/iuu8UENKy0",
+  "note": "首页四个权限项排在同一行；未开启的权限显示红色；点「无障碍」用 root 自动开启，点「ROOT」直接申请 root 授权；签到截图自动归档到 Pictures/didi，每 7 天清理超过 7 天的旧图"
 }
