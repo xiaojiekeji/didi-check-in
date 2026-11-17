@@ -1,3 +1,4 @@
 https://aka.doubaocdn.com/s/yhSkIyCXDY
 6f8fe7d13670fdac695edaf9892282641305542810353232bdb78672a30c3139
 v1.8.2
+# retry: previous run failed in Build debug APK (infra)
