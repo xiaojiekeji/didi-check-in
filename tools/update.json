@@ -1,8 +1,8 @@
 {
-  "versionCode": 34,
-  "versionName": "1.7.4",
-  "size": 47053293,
-  "sha256": "ac40abcbb7404b1d763e98bb775a91a6162525550cafe26599abbfd642412b0e",
-  "url": "https://aka.doubaocdn.com/s/4KNEZPMY2B",
-  "note": "已授予权限卡片移入设置页；检测升级改走国内 CDN，无需 VPN"
+  "versionCode": 35,
+  "versionName": "1.7.5",
+  "size": 47054079,
+  "sha256": "ed2e0347ca57d1dab70c892f4eb0418835822a2ba16d5a43407fadc0c5ecbac0",
+  "url": "https://aka.doubaocdn.com/s/25GH20VwEv",
+  "note": "设置页顶部新增「版本更新」卡片（当前版本/新版本号/立即升级）；记录页记录卡片增加「第N天」签到天数徽标，按���滴 5 天签到周期显示第1~5天；主页新增「还需签到 N 天，获得 3 元优惠券」提示"
 }
