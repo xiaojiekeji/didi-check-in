@@ -20,18 +20,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply v1.5.8 source
+      - name: Read build manifest
         run: |
-          set -o pipefail
+          set -e
+          cat tools/v158_env.txt
           URL=$(sed -n '1p' tools/v158_env.txt)
           SHA=$(sed -n '2p' tools/v158_env.txt)
-          echo "tar=$URL"
-          curl -fSL --retry 3 -o /tmp/v158.tar.gz "$URL"
-          echo "$SHA  /tmp/v158.tar.gz" | sha256sum -c -
-          tar xzf /tmp/v158.tar.gz -C .
+          TAG=$(sed -n '3p' tools/v158_env.txt)
+          echo "TAR_URL=$URL" >> $GITHUB_ENV
+          echo "TAR_SHA=$SHA" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Apply source
+        run: |
+          set -o pipefail
+          curl -fSL --retry 3 -o /tmp/src.tar.gz "$TAR_URL"
+          echo "$TAR_SHA  /tmp/src.tar.gz" | sha256sum -c -
+          tar xzf /tmp/src.tar.gz -C .
           JAVA=app/src/main/java/com/doubao/autocheckin/CheckinAccessibilityService.java
           if grep -q "nodeFirstPass" "$JAVA"; then
-            echo "源码已内置 v1.5.8 改动，无需打补丁"
+            echo "源码已内置改动，无需打补丁"
           else
             if git apply --check tools/v158_service.patch; then
               git apply tools/v158_service.patch
@@ -45,8 +53,8 @@ jobs:
           grep -n "versionName\|versionCode" app/build.gradle
           echo "--- 快路径 ---"
           grep -c "nodeFirstPass" "$JAVA"
-          echo "--- 新关键词 ---"
-          grep -c "kw_owner_service" app/src/main/res/values/arrays.xml
+          echo "--- travelBottom ---"
+          grep -c "travelBottom" "$JAVA"
           echo "--- su 绝对路径 ---"
           grep -c "/debug_ramdisk/su" "$JAVA"
 
@@ -125,18 +133,19 @@ jobs:
         with:
           files: app/build/outputs/apk/debug/*.apk
 
-      - name: Publish v1.5.8 release
+      - name: Publish release from manifest
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.5.8
-          name: v1.5.8 提速版
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
           body: |
-            1) 新增「控件树快路径」：能认到目标就直接点，不再每次都截图 + OCR，整体耗时大幅下降；
-            2) 修正车主页流程：先点「车主服务」子分类再点「滴滴充电」（上一版就是缺这一步才找不到入口）；
-            3) 修正「我的 → 会员中心」入口：只认整词「会员中心」，不再误点「会员专属券 / 普通用户」跳去别的页面；
-            4) 修正页面识别：在充电「我的」页不再反复回点底部「我的」（这是「乱跳页面」的根源）；
-            5) 签到区只用上半屏识别，只下滑一次让开「立即续费」浮层，不再白滑 6 次；
-            6) root 改用 su 绝对路径探测（/system/bin/su、/debug_ramdisk/su 等），修掉 App 内 "su: inaccessible or not found"；
-            7) 全屏 H5 浮层（充电好礼 / 100 元礼包）改为按返回键关闭，不再卡在浮层上。
+            自动构建产物（固定签名，可直接覆盖安装）。
+            - 控件树快路径：能认到目标就直接点，不再每步截图 + OCR；
+            - 车主页：先点「车主服务」子分类再点「滴滴充电」；
+            - 「我的 → 会员中心」只认整词，不再误点；
+            - 页面识别收紧：滴滴出行首页的底栏不再被当成充电「我的」页（v1.5.8 真机实测会反复点底栏、页面不动）；
+            - 签到区只看上半屏，只下滑一次让开「立即续费」浮层；
+            - root 改用 su 绝对路径探测；
+            - 全屏 H5 浮层（充电好礼 / 100 元礼包）改为按返回键关闭。
           files: app/build/outputs/apk/debug/*.apk
