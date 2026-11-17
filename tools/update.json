@@ -1,8 +1,8 @@
 {
-  "versionCode": 45,
-  "versionName": "1.8.5",
+  "versionCode": 46,
+  "versionName": "1.8.6",
   "size": 47062407,
-  "sha256": "7a1a467529eef61ef27aa24a6603b9978771028389043b182d712fc0c5a8366c",
-  "url": "https://aka.doubaocdn.com/s/qo9qYcfL0Y",
-  "note": "签到遇到步骤外弹窗/广告会先识别并关掉再继续；页面跑偏或连续十几次不再变化时自动按返回退回，连退两页仍不动就重新拉起滴滴回到主线。主页按钮「手动执行签到」，执行中变「停止」，停止静默不弹窗；点手动签到会先用 root 把无障碍等权限补齐再跑"
+  "sha256": "96b4acb57815ede99cfe7e48c26facbf2ffadfa35a189f8ebf719bd1481f0ba5",
+  "url": "https://aka.doubaocdn.com/s/We5KzEuwkB",
+  "note": "每次开跑前先用 root 结束滴滴进程再冷启动，避免停在上次残留页面；签到中遇到弹窗/广告先识别关闭再继续；页面跑偏或长时间无变化自动按返回退回，仍不动就重拉滴滴回主线。点手动签到会先自动补权限（含无障碍）"
 }
