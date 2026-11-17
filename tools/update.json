@@ -1,8 +1,8 @@
 {
-  "versionCode": 47,
-  "versionName": "1.8.7",
+  "versionCode": 48,
+  "versionName": "1.8.8",
   "size": 47062407,
-  "sha256": "a728774265958cd66aaae7947eb16f2d0e29166023e6d9b7895b6746fabf0c2c",
-  "url": "https://aka.doubaocdn.com/s/c63YDU6WBQ",
-  "note": "修正会员中心签到定位：改为一进页面就向下拖、把顶部签到日历拖出来（上滑会滑到续费套餐区）；只有认出「第N天」格子才按格子下方兜底点击，认不出不乱点；开屏广告自动点「跳过」。"
+  "sha256": "eba3233244de39d01f4e53754af3b9b959ee534bf6eba61e1293425871ad5f85",
+  "url": "https://aka.doubaocdn.com/s/v4q82zHXvJ",
+  "note": "进会员中心后先下滑 2 次回顶、再小幅上滑 1 次把签到卡片从「立即续费」浮层后面顶出来；仍认不出就点签到卡片入口再识别一轮；开屏广告自动点「跳过」。"
 }
