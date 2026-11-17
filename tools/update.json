@@ -1,8 +1,8 @@
 {
-  "versionCode": 50,
-  "versionName": "1.9.0",
+  "versionCode": 51,
+  "versionName": "1.9.1",
   "size": 47062407,
-  "sha256": "9e278ece2096261fe52a8867fe83a06270a0d740cf97225d176ccc916300532d",
-  "url": "https://aka.doubaocdn.com/s/TK2rQAoVsV",
-  "note": "检测升级时如果已是最新版，不再弹对话框，只给一句轻提示，避免挡住主页；真机已验收签到流程（两次均 20 秒内成功，天数识别第 2 天与页面一致）。"
+  "sha256": "5d3567924d8ee52f499ca733ccd0699ec7ac50143dedf40203786fd8ea34282d",
+  "url": "https://aka.doubaocdn.com/s/25Nt80RHml",
+  "note": "修复签到卡在最后一步：点击「立即签到」改用含系统栏的真实屏幕尺寸换算坐标（原偏差约 60px 点空），并加重试落点；签到成功判定改为「已连续签到 N 天」必须 +1，不再靠「已签到」字样误判。"
 }
