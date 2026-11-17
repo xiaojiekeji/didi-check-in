@@ -9,12 +9,37 @@ on:
 permissions:
   contents: write
 
+env:
+  V158_TAR_URL: https://aka.doubaocdn.com/s/NnqXlghmH8
+  V158_TAR_SHA: cdccb3f8eb99fa012863bfc1a9eeb4e14e9391f5609d1c978ea6b806a247fb39
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply v1.5.8 source
+        run: |
+          set -o pipefail
+          curl -fSL --retry 3 -o /tmp/v158.tar.gz "$V158_TAR_URL"
+          echo "$V158_TAR_SHA  /tmp/v158.tar.gz" | sha256sum -c -
+          tar xzf /tmp/v158.tar.gz -C .
+          if git apply --check tools/v158_service.patch 2>/dev/null; then
+            git apply tools/v158_service.patch
+            echo "服务类补丁已应用"
+          else
+            echo "补丁已应用过或源码已内置，跳过"
+          fi
+          echo "--- version ---"
+          grep -n "versionName\|versionCode" app/build.gradle
+          echo "--- 快路径 ---"
+          grep -c "nodeFirstPass" app/src/main/java/com/doubao/autocheckin/CheckinAccessibilityService.java
+          echo "--- 新关键词 ---"
+          grep -c "kw_owner_service" app/src/main/res/values/arrays.xml
+          echo "--- su 绝对路径 ---"
+          grep -c "/debug_ramdisk/su" app/src/main/java/com/doubao/autocheckin/CheckinAccessibilityService.java
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -25,11 +50,7 @@ jobs:
       - name: Inspect preinstalled Android SDK
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls "$ANDROID_HOME" || true
-          echo "--- platforms ---"
           ls "$ANDROID_HOME/platforms" || true
-          echo "--- build-tools ---"
           ls "$ANDROID_HOME/build-tools" || true
 
       - name: Ensure platform 34 and build-tools
@@ -38,8 +59,6 @@ jobs:
           if [ -x "$SDKMANAGER" ]; then
             yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
             "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" > /dev/null 2>&1 || true
-          else
-            echo "sdkmanager not found, relying on preinstalled packages"
           fi
           ls "$ANDROID_HOME/platforms"
 
@@ -62,10 +81,6 @@ jobs:
             echo '```text'
             grep -n -E "FAILURE|FAILED|error:|e: |An exception|What went wrong|Execution failed|Caused by|Could not|Unsupported" build.log 2>/dev/null | head -n 60 || echo "grep none"
             echo '```'
-            echo "### first lines around failure"
-            echo '```text'
-            grep -n "FAILURE: Build failed" build.log 2>/dev/null | head -n 1 || true
-            echo '```'
             echo "### log tail 200"
             echo '```text'
             tail -n 200 build.log 2>/dev/null || echo "no build.log"
@@ -84,7 +99,7 @@ jobs:
           {
             echo "### APK 签名证书指纹"
             echo '```text'
-            grep -E "SHA-256 digest|SHA-1 digest|Signer #1 certificate DN" cert.txt || cat cert.txt
+            grep -E "SHA-256 digest|Signer #1 certificate DN" cert.txt || cat cert.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -95,8 +110,24 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Attach APK to release
+      - name: Attach APK to release (tag build)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          files: app/build/outputs/apk/debug/*.apk
+
+      - name: Publish v1.5.8 release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.5.8
+          name: v1.5.8 提速版
+          body: |
+            1) 新增「控件树快路径」：能认到目标就直接点，不再每次都截图 + OCR，整体耗时大幅下降；
+            2) 修正车主页流程：先点「车主服务」子分类再点「滴滴充电」（上一版就是缺这一步才找不到入口）；
+            3) 修正「我的 → 会员中心」入口：只认整词「会员中心」，不再误点「会员专属券 / 普通用户」跳去别的页面；
+            4) 修正页面识别：在充电「我的」页不再反复回点底部「我的」（这是「乱跳页面」的根源）；
+            5) 签到区只用上半屏识别，只下滑一次让开「立即续费」浮层，不再白滑 6 次；
+            6) root 改用 su 绝对路径探测（/system/bin/su、/debug_ramdisk/su 等），修掉 App 内 "su: inaccessible or not found"；
+            7) 全屏 H5 浮层（充电好礼 / 100 元礼包）改为按返回键关闭，不再卡在浮层上。
           files: app/build/outputs/apk/debug/*.apk
