@@ -84,6 +84,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- 远程测试入口：adb shell am broadcast -a com.doubao.autocheckin.ACTION_RUN -->
+        <receiver
+            android:name=".TestReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.doubao.autocheckin.ACTION_RUN" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

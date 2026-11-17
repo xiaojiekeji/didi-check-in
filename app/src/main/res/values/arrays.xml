@@ -10,10 +10,14 @@
         <item>车主</item>
     </string-array>
 
-    <!-- 车主页里的「滴滴充电 / 小桔充电」入口 -->
+    <!-- 车主页里的「滴滴充电 / 小桔充电」入口（v1.5.6 加宽：入口文案改版成「充电」「充电服务」也能认） -->
     <string-array name="kw_charge">
         <item>滴滴充电</item>
         <item>小桔充电</item>
+        <item>充电服务</item>
+        <item>充电站</item>
+        <item>充电地图</item>
+        <item>充电</item>
     </string-array>
 
     <!-- 底部导航「我的」 -->
@@ -22,10 +26,14 @@
         <item>个人中心</item>
     </string-array>
 
-    <!-- 「会员中心」入口 -->
+    <!-- 「会员中心」入口（v1.5.6 加宽：卡券、权益、VIP 等改版文案也能认） -->
     <string-array name="kw_member">
         <item>会员中心</item>
+        <item>我的会员</item>
+        <item>会员权益</item>
+        <item>会员专享</item>
         <item>会员</item>
+        <item>权益</item>
     </string-array>
 
     <!-- 签到按钮文案 -->
