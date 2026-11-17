@@ -9,9 +9,9 @@ on:
 permissions:
   contents: write
 
-env:
-  V158_TAR_URL: https://aka.doubaocdn.com/s/NnqXlghmH8
-  V158_TAR_SHA: cdccb3f8eb99fa012863bfc1a9eeb4e14e9391f5609d1c978ea6b806a247fb39
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -23,23 +23,32 @@ jobs:
       - name: Apply v1.5.8 source
         run: |
           set -o pipefail
-          curl -fSL --retry 3 -o /tmp/v158.tar.gz "$V158_TAR_URL"
-          echo "$V158_TAR_SHA  /tmp/v158.tar.gz" | sha256sum -c -
+          URL=$(sed -n '1p' tools/v158_env.txt)
+          SHA=$(sed -n '2p' tools/v158_env.txt)
+          echo "tar=$URL"
+          curl -fSL --retry 3 -o /tmp/v158.tar.gz "$URL"
+          echo "$SHA  /tmp/v158.tar.gz" | sha256sum -c -
           tar xzf /tmp/v158.tar.gz -C .
-          if git apply --check tools/v158_service.patch 2>/dev/null; then
-            git apply tools/v158_service.patch
-            echo "服务类补丁已应用"
+          JAVA=app/src/main/java/com/doubao/autocheckin/CheckinAccessibilityService.java
+          if grep -q "nodeFirstPass" "$JAVA"; then
+            echo "源码已内置 v1.5.8 改动，无需打补丁"
           else
-            echo "补丁已应用过或源码已内置，跳过"
+            if git apply --check tools/v158_service.patch; then
+              git apply tools/v158_service.patch
+              echo "服务类补丁已应用"
+            else
+              echo "补丁无法应用，中止构建"
+              exit 1
+            fi
           fi
           echo "--- version ---"
           grep -n "versionName\|versionCode" app/build.gradle
           echo "--- 快路径 ---"
-          grep -c "nodeFirstPass" app/src/main/java/com/doubao/autocheckin/CheckinAccessibilityService.java
+          grep -c "nodeFirstPass" "$JAVA"
           echo "--- 新关键词 ---"
           grep -c "kw_owner_service" app/src/main/res/values/arrays.xml
           echo "--- su 绝对路径 ---"
-          grep -c "/debug_ramdisk/su" app/src/main/java/com/doubao/autocheckin/CheckinAccessibilityService.java
+          grep -c "/debug_ramdisk/su" "$JAVA"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
