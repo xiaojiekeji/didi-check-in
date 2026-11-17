@@ -1,8 +1,8 @@
 {
-  "versionCode": 70,
-  "versionName": "2.1.0",
-  "size": 47081388,
-  "sha256": "d1a5d52e66d57a08096f07fa72b1e846bd0187e4041fbf89f025323fa8ebd9ca",
-  "url": "https://aka.doubaocdn.com/s/iuu8UENKy0",
-  "note": "首页四个权限项排在同一行；未开启的权限显示红色；点「无障碍」用 root 自动开启，点「ROOT」直接申请 root 授权；签到截图自动归档到 Pictures/didi，每 7 天清理超过 7 天的旧图"
+  "versionCode": 73,
+  "versionName": "2.1.3",
+  "size": 47082932,
+  "sha256": "9caa04af84af06438dff9ff2204d4ed9552d41001ed8f84bbf2ac36c71109260",
+  "url": "https://aka.doubaocdn.com/s/p4WTzZMukn",
+  "note": "去掉「今日签到」卡片里的 root 权限按钮；修复打开 App 时整页发灰（点击后才恢复）；底栏浮岛四角灰色阴影去掉，保留 iOS 玻璃质感"
 }
