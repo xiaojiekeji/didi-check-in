@@ -1,8 +1,8 @@
 {
-  "versionCode": 64,
-  "versionName": "2.0.4",
+  "versionCode": 67,
+  "versionName": "2.0.7",
   "size": 47077280,
-  "sha256": "ef1f6a4f4f98beae20749021cd2b7a897c20ff736c1d3d53a5935b6ae76c7f59",
-  "url": "https://aka.doubaocdn.com/s/W0RUMbk29M",
-  "note": "截图前把签到卡片顶到屏幕上部再裁剪，记录页缩略图与签到页一致"
+  "sha256": "1254c6d47e3649238a705f922b42e7d9e8e7d486a07197a2ebb4939a078de270",
+  "url": "https://aka.doubaocdn.com/s/ci1hxFG2hS",
+  "note": "记录页只显示与签到页一致的卡片截图（截图前自动把签到卡滚到可视区）"
 }
