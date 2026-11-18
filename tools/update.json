@@ -1,8 +1,8 @@
 {
-  "versionCode": 87,
-  "versionName": "2.1.17",
+  "versionCode": 88,
+  "versionName": "2.1.18",
   "size": 47092356,
-  "sha256": "1da427a685673830f3b084e5052a8fbcf8536204ed6b78849b5d0e9dd8f7626e",
-  "url": "https://aka.doubaocdn.com/s/zjOvTJOCuf",
-  "note": "修复 root 开不了无障碍、点签到才弹「无障碍未开启」的问题：root 开启改为「先摘掉服务名+总开关置0 → 等 1s → 写回并置1 → 读回校验，未成再重试一轮」，不再因为 settings 里残留服务名就误判 already 而直接跳过；状态判定不再只看 settings 字符串，而是 settings+总开关+服务实例/系统 enabled 列表（写后 5s 宽限）；手动签到时检测到未开会自动 root 强开再等最多 10s 连上，成功就直接开跑，心跳只在真没开时才动。"
+  "sha256": "f5574830b89313bc77838455c77014553a815a51754b0ded4dcf7114c4d26d1c",
+  "url": "https://aka.doubaocdn.com/s/lyJYyKynCJ",
+  "note": "修正优惠券取数：签到截图保存后自动回「我的」→ 点「优惠券」→ 券列表，只取列表最上面那一列的到期日（按页面 y 最小，不按日期排序）作为 N 的依据；抓完主动广播给首页，N 立即刷新；退回「我的」页不留在券列表；遇签到页/弹层逐级返回重试。"
 }
