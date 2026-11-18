@@ -1,8 +1,8 @@
 {
-  "versionCode": 90,
-  "versionName": "2.1.20",
-  "size": 47194906,
-  "sha256": "3db870910891767a1f229fd3a6cd6c23e9eeadb02a14a5f13f85a9bc64ba4c7f",
-  "url": "https://aka.doubaocdn.com/s/mliy2dkjGz",
-  "note": "定位并修复优惠券取数真正的根因：签到结束后 busy 已复位，抓券流程用的截图接口遇到「!busy」会直接丢弃回调，导致抓券一步都跑不动。现改为抓券专用截图（只看限流不看 busy），并让 busy 末完时 2 秒后重试；读不到日期时自动留一张现场图到 Pictures/didi/coupon-* 便于定位。"
+  "versionCode": 91,
+  "versionName": "2.1.21",
+  "size": 47096456,
+  "sha256": "0ae783699e051663507fd382722fa6bff42e5c2bd6996f1c49e0f9c8d2b79222",
+  "url": "https://aka.doubaocdn.com/s/F6QQzKsIHC",
+  "note": "点「即将过期」卡不再只抓券，而是完整跑一遍签到流程（唤醒/解锁/冷启动/签到/截图），流程走完（含「今天已签到」跳过）自动返回「我的」→ 点「优惠券」→ 取列表最上面一行的到期日刷新 N。"
 }
