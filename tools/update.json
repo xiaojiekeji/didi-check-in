@@ -1,8 +1,8 @@
 {
-  "versionCode": 91,
-  "versionName": "2.1.21",
-  "size": 47096456,
-  "sha256": "0ae783699e051663507fd382722fa6bff42e5c2bd6996f1c49e0f9c8d2b79222",
-  "url": "https://aka.doubaocdn.com/s/F6QQzKsIHC",
-  "note": "点「即将过期」卡不再只抓券，而是完整跑一遍签到流程（唤醒/解锁/冷启动/签到/截图），流程走完（含「今天已签到」跳过）自动返回「我的」→ 点「优惠券」→ 取列表最上面一行的到期日刷新 N。"
+  "versionCode": 92,
+  "versionName": "2.1.22",
+  "size": 47096452,
+  "sha256": "094bb8ea1b06beb98e519e1f482d44c7db89ead3090b965c5f91a8595583f7d3",
+  "url": "https://aka.doubaocdn.com/s/cekBzw5146",
+  "note": "修复手动触发不跑前置流程：手动入口（手动执行签到/点即将过期卡）不再受「自动签到开关」限制，锁屏时无论 root 判定结果都强试一次 root 注 PIN 解锁；上一轮停滞超 8 分钟会自动复位重跑，不再被 busy 卡死。"
 }
