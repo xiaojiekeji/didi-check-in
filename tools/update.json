@@ -1,8 +1,8 @@
 {
-  "versionCode": 80,
-  "versionName": "2.1.10",
-  "size": 47092116,
-  "sha256": "ec955f575406ef5d15a89d1bd89d075773440a1fdd78a72b2404a4bc026cbc56",
-  "url": "https://aka.doubaocdn.com/s/KuFsblw8p8",
-  "note": "底栏直接套用 12123sms 原始源码：BlurBackdropView 逐行照搬（RenderEffect 8dp 高斯 + 提亮增饱和，画 ScrollView 内容子控件并自己补 scroll 位移）；底栏容器改回 FrameLayout(80dp/左右与底部 14dp/clipToOutline) + 34dp 圆角 outline；根布局改 FrameLayout，内容铺满整屏、底栏作为浮岛覆盖在内容之上——玻璃下面不再是空背景，底栏左右与下方露出的是真实页面内容。去掉了自制的低采样模糊与圆角裁剪容器。"
+  "versionCode": 81,
+  "versionName": "2.1.11",
+  "size": 47088088,
+  "sha256": "1b15fe20a7db860f7ca857b568f8d51d49bdcc851b525ae1cb91f4103e0a28ca",
+  "url": "https://aka.doubaocdn.com/s/VLfO3PDZV1",
+  "note": "「手动执行签到 / 停止」按钮从首页移到记录页顶端（大标题下方第一项），首页恢复为状态卡 + 排程配置；按钮逻辑不变（点一下开跑、再点停止）。底栏仍为 12123sms 原始覆盖式实现。"
 }
