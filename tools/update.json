@@ -1,8 +1,8 @@
 {
-  "versionCode": 82,
-  "versionName": "2.1.12",
-  "size": 47088084,
-  "sha256": "9abe27cbb7ac0182cc9ce269585d35858bc207a960326c31f8626eaef4520363",
-  "url": "https://aka.doubaocdn.com/s/UUXGkZndq1",
-  "note": "「排程与保活」卡片从首页移到记录页顶端，手动执行签到按钮嵌在该卡片底部（点开跑、再点停止）；首页只剩运行状态与今日签到卡。"
+  "versionCode": 83,
+  "versionName": "2.1.13",
+  "size": 47092524,
+  "sha256": "cfa0830423b227b18c5eb5c6c06e0fd277d2c66eed17474bf01aa54e3a9051a9",
+  "url": "https://aka.doubaocdn.com/s/OkyOLffU0K",
+  "note": "新增优惠券统计：首页今日签到卡显示券张数（如 6 张 · 签到券 3 张、最近到期日）；记录页新增「优惠券」卡片，逐张列出金额与有效期（3 天内到期标橙）；记录页右上「刷新」或签到成功后自动打开滴滴 → 我的 → 优惠券 拓图 OCR 解析并落盘。"
 }
