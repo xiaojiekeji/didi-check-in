@@ -1,8 +1,8 @@
 {
-  "versionCode": 81,
-  "versionName": "2.1.11",
-  "size": 47088088,
-  "sha256": "1b15fe20a7db860f7ca857b568f8d51d49bdcc851b525ae1cb91f4103e0a28ca",
-  "url": "https://aka.doubaocdn.com/s/VLfO3PDZV1",
-  "note": "「手动执行签到 / 停止」按钮从首页移到记录页顶端（大标题下方第一项），首页恢复为状态卡 + 排程配置；按钮逻辑不变（点一下开跑、再点停止）。底栏仍为 12123sms 原始覆盖式实现。"
+  "versionCode": 82,
+  "versionName": "2.1.12",
+  "size": 47088084,
+  "sha256": "9abe27cbb7ac0182cc9ce269585d35858bc207a960326c31f8626eaef4520363",
+  "url": "https://aka.doubaocdn.com/s/UUXGkZndq1",
+  "note": "「排程与保活」卡片从首页移到记录页顶端，手动执行签到按钮嵌在该卡片底部（点开跑、再点停止）；首页只剩运行状态与今日签到卡。"
 }
