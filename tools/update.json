@@ -1,8 +1,8 @@
 {
-  "versionCode": 89,
-  "versionName": "2.1.19",
-  "size": 47194570,
-  "sha256": "ac44a0396272ee63c8f10710a3a871a9a7a3b81defdc448597cd8ddf5260a19d",
-  "url": "https://aka.doubaocdn.com/s/IdXcRyF2RT",
-  "note": "1) 优惠券取数改为：签到截图后逐级返回到「我的」页（屏上出现「优惠券」入口即认定为已到达）→ 点「优惠券」→ 券列表，只取页面最顶端那列的到期日算 N，跳转接底档时按 OCR 实际文字坐标点击；2) 升级改为开 App 自动静默检查与后台下载，按钮随状态变：下载中→安装更新→已是最新版本，卡片下方常驻新版本号提示。"
+  "versionCode": 90,
+  "versionName": "2.1.20",
+  "size": 47194906,
+  "sha256": "3db870910891767a1f229fd3a6cd6c23e9eeadb02a14a5f13f85a9bc64ba4c7f",
+  "url": "https://aka.doubaocdn.com/s/mliy2dkjGz",
+  "note": "定位并修复优惠券取数真正的根因：签到结束后 busy 已复位，抓券流程用的截图接口遇到「!busy」会直接丢弃回调，导致抓券一步都跑不动。现改为抓券专用截图（只看限流不看 busy），并让 busy 末完时 2 秒后重试；读不到日期时自动留一张现场图到 Pictures/didi/coupon-* 便于定位。"
 }
