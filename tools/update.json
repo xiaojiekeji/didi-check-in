@@ -1,9 +1,9 @@
 {
-  "versionCode": 104,
-  "versionName": "2.1.34",
-  "size": 47100676,
-  "sha256": "c5d6c02bb0f01de22ae173bee6cd7a592ce46a289437725470285d4359a4a680",
+  "versionCode": 105,
+  "versionName": "2.1.35",
+  "size": 47100656,
+  "sha256": "49d282918595a6dceb2f23bd4f575f5e3c832d8653b46d19810d7bd0726a41d4",
   "sha256_typo": "",
-  "url": "https://aka.doubaocdn.com/s/6OtCXof5Xh",
-  "note": "1) 修复“设备自动旋转被打开”：MainActivity 锁定竖屏（screenOrientation=portrait + configChanges），系统自动旋转开关无论开关，界面都不会再跟随手机旋转，签到截图/OCR 坐标也不会因转屏错位；2) 记录页缩略图直接用归档的签到卡裁剪图显示；3) 签到天数只认会员中心「已连续签到 N 天」文案；4) 截图只归档「第1天~第5天 + 已签到」卡片区域。"
+  "url": "https://aka.doubaocdn.com/s/1NcVLpr43G",
+  "note": "1) 自动旋转：App 启动、心跳、每轮签到开跑前都用 root 把 accelerometer_rotation 写 0（只关不开，代码里没有任何写 1 的路径）；2) 通知时间与设置对齐：常驻通知副标题改为读设置（每天 HH:MM 自动执行·未打卡提醒 HH:MM），保存设置后立即刷新通知，不再写死 7:00~8:00；3) 自动签到改为按设定时刻准点执行，去掉旧的 0~60 分钟随机偏移，设置页说明同步改为“按设定时刻准点执行”；4) 保留 2.1.33/2.1.34 的天数口径、签到卡裁剪、记录页缩略图、竖屏锁定。"
 }
