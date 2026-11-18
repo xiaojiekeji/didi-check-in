@@ -1,8 +1,8 @@
 {
-  "versionCode": 92,
-  "versionName": "2.1.22",
+  "versionCode": 93,
+  "versionName": "2.1.23",
   "size": 47096452,
-  "sha256": "094bb8ea1b06beb98e519e1f482d44c7db89ead3090b965c5f91a8595583f7d3",
-  "url": "https://aka.doubaocdn.com/s/cekBzw5146",
-  "note": "修复手动触发不跑前置流程：手动入口（手动执行签到/点即将过期卡）不再受「自动签到开关」限制，锁屏时无论 root 判定结果都强试一次 root 注 PIN 解锁；上一轮停滞超 8 分钟会自动复位重跑，不再被 busy 卡死。"
+  "sha256": "1e9caf24d1987f711172d3202c69c8e47d67f3d6b6933e2ba60d779185f74933",
+  "url": "https://aka.doubaocdn.com/s/vdnLrftt3X",
+  "note": "已撤回 2.1.22 的改动（startTaskManual 手动入口、锁屏强制解锁、busy 自动复位全部去找），行为回到 2.1.21（2.1.20）：点「即将过期」卡 = 完整签到流程 → 截图 → 返回我的 → 点优惠券 → 取最上面一行。版号用 2.1.23(93) 只是为了能直接覆盖安装已装的 2.1.22(92)。"
 }
