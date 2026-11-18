@@ -1,9 +1,9 @@
 {
-  "versionCode": 103,
-  "versionName": "2.1.33",
-  "size": 47100632,
-  "sha256": "0ef13bf7e693a6c49cfa0a4b975913ad91fc2920418b7e93c8253b84af930d74",
+  "versionCode": 104,
+  "versionName": "2.1.34",
+  "size": 47100676,
+  "sha256": "c5d6c02bb0f01de22ae173bee6cd7a592ce46a289437725470285d4359a4a680",
   "sha256_typo": "",
-  "url": "https://aka.doubaocdn.com/s/wve5F0uUq1",
-  "note": "1) 记录页缩略图直接用归档的签到卡裁剪图显示（不再依赖 -card.png），旧版整屏截图仍跳过；2) 签到天数只认会员中心「已连续签到 N 天」文案（支持两位数字，阶梯说明排除），文案缺失才用第N天格子实心点兜底；3) 签到截图只归档「第1天~第5天 + 已签到」卡片区域，定位不到先滚回顶部/上滑重拍最多3次。"
+  "url": "https://aka.doubaocdn.com/s/6OtCXof5Xh",
+  "note": "1) 修复“设备自动旋转被打开”：MainActivity 锁定竖屏（screenOrientation=portrait + configChanges），系统自动旋转开关无论开关，界面都不会再跟随手机旋转，签到截图/OCR 坐标也不会因转屏错位；2) 记录页缩略图直接用归档的签到卡裁剪图显示；3) 签到天数只认会员中心「已连续签到 N 天」文案；4) 截图只归档「第1天~第5天 + 已签到」卡片区域。"
 }
