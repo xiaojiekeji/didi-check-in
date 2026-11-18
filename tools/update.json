@@ -1,8 +1,8 @@
 {
-  "versionCode": 86,
-  "versionName": "2.1.16",
-  "size": 47092352,
-  "sha256": "51b3ef4f82e7b57617505225d7c18819015b7318cf877f401f382dcb5e423a19",
-  "url": "https://aka.doubaocdn.com/s/mqDW9ERhUc",
-  "note": "无障碍自愈：启动时若检测到无障碍未授权，先 root 静默后台开启；开不成则状态卡转「缺少所需权限」、权限格红字「未授权」，点首页「无障碍/未授权」或整张运行状态卡可重复重试 root 开启，不带任何系统设置弹窗。"
+  "versionCode": 87,
+  "versionName": "2.1.17",
+  "size": 47092356,
+  "sha256": "1da427a685673830f3b084e5052a8fbcf8536204ed6b78849b5d0e9dd8f7626e",
+  "url": "https://aka.doubaocdn.com/s/zjOvTJOCuf",
+  "note": "修复 root 开不了无障碍、点签到才弹「无障碍未开启」的问题：root 开启改为「先摘掉服务名+总开关置0 → 等 1s → 写回并置1 → 读回校验，未成再重试一轮」，不再因为 settings 里残留服务名就误判 already 而直接跳过；状态判定不再只看 settings 字符串，而是 settings+总开关+服务实例/系统 enabled 列表（写后 5s 宽限）；手动签到时检测到未开会自动 root 强开再等最多 10s 连上，成功就直接开跑，心跳只在真没开时才动。"
 }
